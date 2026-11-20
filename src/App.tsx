@@ -1,0 +1,926 @@
+import { useEffect, useRef, useState } from "react";
+import Turtle from "./components/Turtle";
+import Logo from "./components/Logo";
+import Coconut from "./components/Coconut";
+import StampBand from "./components/StampBand";
+
+function useReveal() {
+  useEffect(() => {
+    const els = document.querySelectorAll(".reveal");
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => e.isIntersecting && e.target.classList.add("in")),
+      { threshold: 0.12 }
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+}
+
+/* Consistent section header: rule + small caps label, then a measured heading. */
+function SectionHead({
+  label,
+  title,
+  intro,
+  tone = "light",
+}: {
+  label: string;
+  title: string;
+  intro?: string;
+  tone?: "light" | "dark";
+}) {
+  const dark = tone === "dark";
+  return (
+    <div className="max-w-2xl">
+      <div className="flex items-center gap-4">
+        <span className={`w-8 h-px ${dark ? "bg-coral" : "bg-lagoon"}`} />
+        <span className={`font-brand text-[10px] tracking-[0.35em] uppercase ${dark ? "text-coral" : "text-lagoon"}`}>
+          {label}
+        </span>
+      </div>
+      <h2 className={`font-serif font-light text-4xl md:text-[3.25rem] leading-[1.08] tracking-tight mt-6 ${dark ? "text-sand" : ""}`}>
+        {title}
+      </h2>
+      {intro && <p className={`mt-5 text-base md:text-lg leading-relaxed ${dark ? "text-sand/65" : "text-ink/65"}`}>{intro}</p>}
+    </div>
+  );
+}
+
+/* ---------------- NAV ---------------- */
+function Nav() {
+  const [solid, setSolid] = useState(false);
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const on = () => setSolid(window.scrollY > 40);
+    on();
+    window.addEventListener("scroll", on, { passive: true });
+    return () => window.removeEventListener("scroll", on);
+  }, []);
+  const link = "px-4 py-2 rounded-full hover:bg-ink/8 transition";
+  return (
+    <header className="fixed top-0 inset-x-0 z-50">
+      <div className="mx-auto max-w-6xl px-5 md:px-8 py-3 flex items-center justify-between">
+        <a
+          href="#top"
+          className={`rounded-full pl-2 pr-4 py-1.5 transition ${solid ? "bg-sand/90 backdrop-blur border border-ink/10" : ""}`}
+        >
+          <Logo size="sm" />
+        </a>
+        <nav
+          className={`hidden md:flex items-center rounded-full p-1 text-sm transition ${solid ? "bg-sand/90 backdrop-blur border border-ink/10" : ""}`}
+        >
+          {[
+            ["The weight", "#weight"],
+            ["How it works", "#how"],
+            ["A Tuesday", "#tuesday"],
+            ["Stories", "#stories"],
+          ].map(([l, h]) => (
+            <a key={h} href={h} className={link}>
+              {l}
+            </a>
+          ))}
+          <a href="#hello" className="ml-1 px-4 py-2 rounded-full bg-ink text-sand hover:bg-lagoon transition">
+            Say hello
+          </a>
+        </nav>
+        <button
+          onClick={() => setOpen((o) => !o)}
+          aria-label={open ? "Close menu" : "Open menu"}
+          aria-expanded={open}
+          className="md:hidden ml-2 w-10 h-10 rounded-full border border-ink/20 grid place-items-center bg-sand/80 backdrop-blur"
+        >
+          <span className="relative block w-4 h-3">
+            <span className={`absolute left-0 right-0 h-px bg-ink transition-all ${open ? "top-1.5 rotate-45" : "top-0"}`} />
+            <span className={`absolute left-0 right-0 h-px bg-ink transition-all ${open ? "top-1.5 -rotate-45" : "top-3"}`} />
+          </span>
+        </button>
+      </div>
+      {open && (
+        <div className="md:hidden mx-4 mt-1 rounded-2xl bg-sand/95 backdrop-blur border border-ink/10 shadow-lg p-2">
+          {[
+            ["The weight", "#weight"],
+            ["How it works", "#how"],
+            ["A Tuesday", "#tuesday"],
+            ["Stories", "#stories"],
+            ["Say hello", "#hello"],
+          ].map(([l, h]) => (
+            <a
+              key={h}
+              href={h}
+              onClick={() => setOpen(false)}
+              className="block px-4 py-3 rounded-xl text-ink/80 hover:bg-ink hover:text-sand transition"
+            >
+              {l}
+            </a>
+          ))}
+        </div>
+      )}
+    </header>
+  );
+}
+
+/* ---------------- HERO ---------------- */
+function Hero() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [m, setM] = useState({ x: 0, y: 0 });
+  return (
+    <section
+      id="top"
+      ref={ref}
+      onMouseMove={(e) => {
+        const r = ref.current!.getBoundingClientRect();
+        setM({ x: (e.clientX - r.left) / r.width - 0.5, y: (e.clientY - r.top) / r.height - 0.5 });
+      }}
+      className="relative overflow-hidden"
+    >
+      <div className="hidden lg:block absolute right-[6%] top-[14%] w-44 h-44 rounded-full bg-coral" />
+      <div
+        className="hidden lg:block absolute -right-[4%] top-[10%] w-[46vw] max-w-[680px] text-ink transition-transform duration-[1200ms] ease-out"
+        style={{ transform: `translate(${m.x * 30}px, ${m.y * 22}px) rotate(${m.x * 5}deg)` }}
+      >
+        <div className="drift">
+          <Turtle className="w-full h-auto" rotate={28} />
+        </div>
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-6xl px-5 md:px-8 pt-28 md:pt-44 pb-20 md:pb-36">
+        {/* mobile turtle, in flow so it never sits under the words */}
+        <div className="lg:hidden relative h-[44vw] max-h-[230px] mb-3">
+          <div className="absolute right-1 top-3 w-24 h-24 rounded-full bg-coral" />
+          <div className="drift absolute right-0 top-0 w-[44vw] max-w-[210px]">
+            <Turtle className="w-full h-auto" rotate={28} />
+          </div>
+        </div>
+        <p className="rise font-hand text-2xl text-lagoon -rotate-1">psst… you look tired.</p>
+        <h1
+          className="rise font-serif font-light text-[11vw] md:text-7xl leading-[1.02] tracking-tight mt-4 max-w-[15ch]"
+          style={{ animationDelay: ".12s" }}
+        >
+          Your business can <em className="italic text-lagoon">swim</em> on its own.
+        </h1>
+        <p className="rise mt-7 max-w-md text-lg leading-relaxed text-ink/70" style={{ animationDelay: ".24s" }}>
+          We take the repetitive, every-single-day work off your shoulders, so you can get back to the part you
+          actually love. Or go to the beach. We don't judge.
+        </p>
+        <div className="rise mt-9 flex flex-wrap items-center gap-6" style={{ animationDelay: ".36s" }}>
+          <a href="#weight" className="inline-flex items-center gap-3 bg-ink text-sand rounded-full pl-6 pr-1.5 py-1.5 hover:bg-lagoon transition">
+            <span className="text-base">Show me how light it gets</span>
+            <span className="w-9 h-9 rounded-full bg-coral text-ink grid place-items-center">↓</span>
+          </a>
+          <span className="font-hand text-xl text-ink/45">(no jargon, promise)</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------- THE WEIGHT ---------------- */
+const CHORES: { t: string; h: number; skin: number; seed: number }[] = [
+  { t: "Answering the same five questions", h: 4, skin: 0, seed: 3 },
+  { t: "Chasing unpaid invoices", h: 3, skin: 2, seed: 11 },
+  { t: "Booking & rescheduling", h: 3, skin: 1, seed: 7 },
+  { t: "Copying details from A to B", h: 5, skin: 3, seed: 19 },
+  { t: "Sending reminder messages", h: 2, skin: 1, seed: 23 },
+  { t: "Following up with new leads", h: 3, skin: 0, seed: 31 },
+  { t: "Preparing the weekly report", h: 2, skin: 2, seed: 41 },
+  { t: "Welcoming new customers", h: 2, skin: 3, seed: 53 },
+  { t: "Reconciling the receipts", h: 2, skin: 1, seed: 61 },
+];
+
+function Weight() {
+  const [gone, setGone] = useState<number[]>([]);
+  const hours = CHORES.reduce((s, c, i) => (gone.includes(i) ? s + c.h : s), 0);
+  const total = CHORES.reduce((s, c) => s + c.h, 0);
+  const line =
+    gone.length === 0
+      ? "Tap a coconut to crack it open."
+      : hours < 6
+      ? "That's a long lunch. Every week."
+      : hours < 12
+      ? "That's an afternoon off. Every week."
+      : hours < 18
+      ? "That's a three-day weekend."
+      : "That's half your week. Yours again.";
+  const toggle = (i: number) => setGone((g) => (g.includes(i) ? g.filter((x) => x !== i) : [...g, i]));
+
+  return (
+    <section id="weight" className="py-24 md:py-32">
+      <div className="mx-auto max-w-6xl px-5 md:px-8">
+        <SectionHead
+          label="01 — The weight"
+          title="Crack open the coconuts on your list."
+          intro="Some jobs are just hard shells: plenty of effort, not much inside. Tap one to see what happens when it stops being your problem."
+        />
+
+        <div className="mt-12 md:mt-14 grid md:grid-cols-[280px_1fr] lg:grid-cols-[300px_1fr] gap-10 md:gap-12 lg:gap-16 items-start">
+          <div className="md:sticky md:top-24 w-full">
+            <div className="rounded-2xl bg-ink text-sand p-6 md:p-7">
+              <div className="font-brand text-[9px] tracking-[0.35em] uppercase text-sand/45">Time handed back</div>
+              <div className="flex items-end gap-3 mt-3">
+                <span className="font-serif font-light text-6xl md:text-7xl leading-none tabular-nums">{hours}</span>
+                <span className="pb-2 text-sm text-sand/55">hrs / week</span>
+              </div>
+              <div className="mt-5 h-px bg-sand/20 relative">
+                <div className="absolute left-0 -top-px h-[3px] bg-coral transition-all duration-500" style={{ width: `${(hours / total) * 100}%` }} />
+              </div>
+              <p className="font-hand text-2xl text-coral mt-5">{line}</p>
+              <div className="mt-5 flex items-center justify-between text-xs text-sand/45">
+                <span>
+                  {gone.length} of {CHORES.length} set down
+                </span>
+                {gone.length > 0 && (
+                  <button onClick={() => setGone([])} className="underline underline-offset-4 hover:text-sand">
+                    reset
+                  </button>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => setGone(CHORES.map((_, i) => i))}
+              className="mt-4 w-full rounded-full border border-ink/40 py-3 hover:bg-ink hover:text-sand hover:border-ink transition"
+            >
+              Crack them all open
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-5 sm:gap-x-8 gap-y-8 md:gap-y-10">
+            {CHORES.map((c, i) => {
+              const isGone = gone.includes(i);
+              return (
+                <button key={i} onClick={() => toggle(i)} className="group text-left" aria-pressed={isGone}>
+                  <div className="relative aspect-[13/11]">
+                    <div className={`ghost absolute inset-0 ${isGone ? "opacity-100" : "opacity-0"}`}>
+                      <div className="absolute inset-0 rounded-[50%] border border-dashed border-ink/20" />
+                      <span className="absolute inset-0 grid place-items-center font-hand text-xl text-lagoon">handled</span>
+                    </div>
+                    <Coconut
+                      seed={c.seed}
+                      skin={c.skin}
+                      open={isGone}
+                      className={`coco absolute inset-0 w-full h-full ${isGone ? "scale-[0.97]" : ""}`}
+                    />
+                  </div>
+                  <div className="mt-1">
+                    <div className="font-brand text-[9px] tracking-[0.3em] text-ink/40">~{c.h} HRS / WK</div>
+                    <div className={`mt-1 text-sm leading-snug transition ${isGone ? "text-ink/30 line-through" : "text-ink/80"}`}>{c.t}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------- HOW IT WORKS: vertical timeline ---------------- */
+const STEPS = [
+  {
+    n: "01",
+    t: "Listen",
+    d: "We sit with you — coffee optional, strongly encouraged — and learn how your days really go. What drains you, what you love, what keeps slipping.",
+    aside: "you talk, we listen",
+  },
+  {
+    n: "02",
+    t: "Lighten",
+    d: "Quietly, in the background, we set the repetitive work up to handle itself. Messages, bookings, payments, paperwork. All in your voice, your way.",
+    aside: "we build quietly",
+  },
+  {
+    n: "03",
+    t: "Let go",
+    d: "We hand it over, walk you through it, and stay close. As your business grows or changes, we adjust it with you.",
+    aside: "you breathe out",
+  },
+];
+
+function How() {
+  const [active, setActive] = useState(0);
+  const rows = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) setActive(Number((e.target as HTMLElement).dataset.i));
+        });
+      },
+      { rootMargin: "-42% 0px -42% 0px", threshold: 0 }
+    );
+    rows.current.forEach((el) => el && io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
+  return (
+    <section id="how" className="relative bg-deep text-sand py-24 md:py-32">
+      <div className="mx-auto max-w-6xl px-5 md:px-8">
+        <SectionHead
+          tone="dark"
+          label="02 — How it works"
+          title="Three slow steps. That is the whole thing."
+          intro="No forty-page proposal. No technical language. Three stages that feel like a conversation."
+        />
+
+        <div className="relative mt-14 md:mt-20">
+          {/* rail */}
+          <div className="absolute left-[9px] md:left-[15px] top-3 bottom-6 w-px bg-sand/15" aria-hidden />
+          <div
+            className="absolute left-[9px] md:left-[15px] top-3 w-px bg-coral transition-all duration-700 ease-out"
+            style={{ height: `calc(${((active + 0.55) / STEPS.length) * 100}% - 12px)` }}
+            aria-hidden
+          />
+
+          <ol className="space-y-12 md:space-y-16">
+            {STEPS.map((s, i) => {
+              const on = i === active;
+              return (
+                <li key={s.n}>
+                  <div
+                    ref={(el) => {
+                      rows.current[i] = el;
+                    }}
+                    data-i={i}
+                    className="relative grid grid-cols-1 md:grid-cols-[1.05fr_1fr] gap-4 md:gap-16 pl-10 md:pl-20"
+                  >
+                    {/* dot */}
+                    <span
+                      className={`absolute left-0 md:left-[6px] top-2.5 w-[19px] h-[19px] rounded-full border-2 grid place-items-center transition-all duration-500 ${
+                        on ? "border-coral bg-deep" : "border-sand/25 bg-deep"
+                      }`}
+                      aria-hidden
+                    >
+                      <span className={`w-2 h-2 rounded-full transition-all duration-500 ${on ? "bg-coral scale-100" : "bg-sand/25 scale-75"}`} />
+                    </span>
+
+                    <div>
+                      <span className="font-brand text-[10px] tracking-[0.35em] text-coral">{s.n}</span>
+                      <h3 className={`font-serif font-light text-4xl md:text-5xl mt-3 leading-none transition-colors duration-500 ${on ? "text-sand" : "text-sand/70"}`}>
+                        {s.t}
+                      </h3>
+                      <p className={`font-hand text-xl md:text-2xl mt-3 transition-colors duration-500 ${on ? "text-coral" : "text-coral/50"}`}>→ {s.aside}</p>
+                    </div>
+                    <div>
+                      <p className="text-sand/70 leading-relaxed md:text-[17px] md:pt-7">{s.d}</p>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------- A TUESDAY ---------------- */
+const BEFORE: string[][] = [
+  ["6:40", "Wake up to 37 unread messages"],
+  ["8:00", "Say “yes, we're open Saturday” again"],
+  ["10:30", "Retype orders into the spreadsheet"],
+  ["13:00", "Lunch at the desk. Cold."],
+  ["15:00", "Chase three overdue invoices"],
+  ["19:30", "Still sending reminder texts"],
+  ["22:45", "“Just one more thing…”"],
+];
+const AFTER: string[][] = [
+  ["7:30", "Wake up. Messages already answered."],
+  ["9:00", "Work on the thing you're great at"],
+  ["11:00", "New bookings appeared. You did nothing."],
+  ["13:00", "Long lunch. Outside. Warm."],
+  ["15:00", "Payments landed on their own"],
+  ["17:00", "Close the laptop. Actually close it."],
+  ["18:30", "Sunset swim"],
+];
+
+function Tuesday() {
+  const [v, setV] = useState(50);
+  const [auto, setAuto] = useState(true);
+  const [dragging, setDragging] = useState(false);
+  const box = useRef<HTMLDivElement | null>(null);
+  const vRef = useRef(v);
+  vRef.current = v;
+
+
+  useEffect(() => {
+    if (!auto || dragging) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const id = window.setInterval(() => {
+      const t = performance.now() / 1000;
+      const next = 50 + Math.sin(t * 0.55) * 30;
+      if (Math.abs(next - vRef.current) > 0.4) setV(next);
+    }, 55);
+    return () => window.clearInterval(id);
+  }, [auto, dragging]);
+
+  const setFromClientX = (clientX: number) => {
+    const r = box.current?.getBoundingClientRect();
+    if (!r) return;
+    setV(Math.max(0, Math.min(100, ((clientX - r.left) / r.width) * 100)));
+  };
+
+  const Card = ({ items, after }: { items: string[][]; after?: boolean }) => (
+    <div className={`p-6 md:p-10 h-full ${after ? "bg-foam" : "bg-[#ded6c6]"}`}>
+      <div className="flex items-center justify-between">
+        <span className="font-brand text-[9px] tracking-[0.35em] uppercase pr-16" aria-hidden>{after ? "After Palawan" : "Before"}</span>
+        <span className="font-hand text-2xl">{after ? "ahh." : "ugh."}</span>
+      </div>
+      <ul className="mt-5 space-y-3">
+        {items.map(([t, d]) => (
+          <li key={t} className="flex gap-4 items-baseline border-b border-ink/12 pb-2.5">
+            <span className="font-brand text-[10px] w-11 shrink-0 opacity-50">{t}</span>
+            <span className={`font-serif font-light text-[17px] md:text-2xl leading-snug ${after ? "" : "line-through decoration-coral/50 decoration-1"}`}>{d}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+
+  return (
+    <section id="tuesday" className="py-24 md:py-32">
+      <div className="mx-auto max-w-6xl px-5 md:px-8">
+        <SectionHead
+          label="03 — A Tuesday"
+          title="Same business. Different day."
+          intro="It moves on its own — or drag the sun yourself to compare a normal Tuesday."
+        />
+
+        {/* mobile & tablet: stacked, no drag */}
+        <div className="lg:hidden mt-10 grid gap-5 sm:grid-cols-2">
+          <div className="rounded-2xl overflow-hidden border border-ink/15">
+            <Card items={BEFORE} />
+          </div>
+          <div className="rounded-2xl overflow-hidden border border-ink/15">
+            <Card items={AFTER} after />
+          </div>
+        </div>
+
+        {/* desktop: self-moving comparison */}
+        <div className="hidden lg:block mt-10 reveal">
+          <div
+            ref={box}
+            className="relative h-[560px] rounded-2xl overflow-hidden border border-ink/15 select-none touch-none"
+            onPointerDown={(e) => {
+              setDragging(true);
+              setAuto(false);
+              (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+              setFromClientX(e.clientX);
+            }}
+            onPointerMove={(e) => {
+              if (dragging) setFromClientX(e.clientX);
+            }}
+            onPointerUp={() => setDragging(false)}
+            onPointerCancel={() => setDragging(false)}
+          >
+            <div className="absolute inset-0">
+              <Card items={BEFORE} />
+            </div>
+            <div className="absolute inset-0 z-[1]" style={{ clipPath: `inset(0 0 0 ${v}%)` }}>
+              <Card items={AFTER} after />
+            </div>
+
+            {/* fixed labels so both states stay readable */}
+            <div className="absolute z-[2] left-5 top-1/2 -translate-y-1/2 rotate-180 font-brand text-[9px] tracking-[0.35em] uppercase text-ink/45 pointer-events-none" style={{ writingMode: "vertical-rl" }}>
+              Before
+            </div>
+            <div className="absolute z-[2] right-5 top-1/2 -translate-y-1/2 font-brand text-[9px] tracking-[0.35em] uppercase text-ink/45 pointer-events-none" style={{ writingMode: "vertical-rl" }}>
+              After
+            </div>
+
+            {/* divider */}
+            <div className="absolute z-[2] top-0 bottom-0 w-px bg-ink/70 pointer-events-none" style={{ left: `${v}%` }} />
+
+            {/* sun handle */}
+            <button
+              type="button"
+              role="slider"
+              aria-label="Compare before and after"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(v)}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+                  e.preventDefault();
+                  setAuto(false);
+                  setV((n) => Math.max(0, Math.min(100, n + (e.key === "ArrowRight" ? 4 : -4))));
+                }
+              }}
+              className="absolute top-1/2 z-10 w-14 h-14 -ml-7 -mt-7 rounded-full bg-coral border-2 border-ink grid place-items-center cursor-ew-resize shadow-[0_6px_16px_rgba(20,20,20,.25)] focus:outline-none focus-visible:ring-4 focus-visible:ring-ink/25"
+              style={{ left: `${v}%` }}
+            >
+              <span className="text-ink text-base leading-none" aria-hidden>⇆</span>
+              {auto && !dragging && (
+                <span className="absolute inset-0 rounded-full border-2 border-coral/60" style={{ animation: "slider-pulse 2.4s ease-out infinite" }} aria-hidden />
+              )}
+            </button>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
+            <p className="font-hand text-xl text-ink/50">
+              drag the sun — or let it drift
+            </p>
+            <button
+              type="button"
+              onClick={() => setAuto((a) => !a)}
+              className="inline-flex items-center gap-2 rounded-full border border-ink/25 px-4 py-2 text-xs tracking-[0.08em] text-ink/65 hover:border-ink/60 hover:text-ink transition"
+              aria-pressed={auto}
+            >
+              <span className={`grid place-items-center w-4 h-4 rounded-full border text-[8px] ${auto ? "bg-ink text-sand border-ink" : "border-ink/30"}`} aria-hidden>
+                {auto ? "❙❙" : "▶"}
+              </span>
+              {auto ? "pause the drift" : "let it drift"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------- STORIES ---------------- */
+function Stories() {
+  const notes = [
+    { q: "I used to spend Sundays on admin. Now I spend them with my kids. That's the whole review.", w: "Maya", b: "Pilates studio" },
+    { q: "Customers think I hired three people. I didn't. I just stopped doing everything by hand.", w: "Tomás", b: "Family bakery" },
+    { q: "They explained everything like a friend would. I never once felt stupid. Rare.", w: "Priya", b: "Interior design" },
+  ];
+  return (
+    <section id="stories" className="py-24 md:py-32 bg-shell/60">
+      <div className="mx-auto max-w-6xl px-5 md:px-8">
+        <SectionHead label="04 — Stories" title="From people who breathe easier now." />
+        <div className="mt-14 grid md:grid-cols-3 gap-x-12 gap-y-10">
+          {notes.map((n, i) => (
+            <figure key={i} className="reveal border-t border-ink/25 pt-6" style={{ transitionDelay: `${i * 110}ms` }}>
+              <blockquote className="font-serif font-light italic text-xl leading-snug">{n.q}</blockquote>
+              <figcaption className="mt-5 font-brand text-[9px] tracking-[0.3em] uppercase text-ink/50">
+                {n.w} · {n.b}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+        <div className="reveal mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 border-t border-ink/20 pt-8">
+          {[
+            ["12 hrs", "handed back, weekly"],
+            ["3 weeks", "first coffee to calm"],
+            ["0", "words of jargon"],
+            ["∞", "patience for questions"],
+          ].map(([a, b]) => (
+            <div key={b}>
+              <div className="font-serif font-light text-4xl md:text-5xl">{a}</div>
+              <div className="mt-2 text-sm text-ink/55">{b}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------- POSTCARD ---------------- */
+const HANDOFFS = [
+  "Messages & replies",
+  "Bookings & scheduling",
+  "Invoices & payments",
+  "Follow-ups & leads",
+  "Reports & admin",
+  "Not sure yet",
+];
+const LOADS = ["Under 2 hrs", "2–5 hrs", "5–10 hrs", "10+ hrs", "No idea"];
+
+function Postcard() {
+  const [sent, setSent] = useState(false);
+  const [step, setStep] = useState(0);
+  const [picks, setPicks] = useState<string[]>([]);
+  const [load, setLoad] = useState("");
+  const [note, setNote] = useState("");
+  const [who, setWho] = useState({ name: "", business: "", email: "", site: "" });
+  const [tried, setTried] = useState(false);
+
+  const toggle = (h: string) => {
+    setPicks((p) => (h === "Not sure yet" ? (p.includes(h) ? [] : [h]) : p.includes(h) ? p.filter((x) => x !== h) : [...p.filter((x) => x !== "Not sure yet"), h]));
+  };
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(who.email);
+  const canReview = who.name.trim().length > 1 && emailOk;
+  const canSend = picks.length > 0 || note.trim().length > 0;
+
+  const next = () => {
+    if (step === 1 && !canReview) {
+      setTried(true);
+      return;
+    }
+    if (step === 2) return;
+    setTried(false);
+    setStep((s) => Math.min(2, s + 1));
+  };
+  const back = () => {
+    setTried(false);
+    setStep((s) => Math.max(0, s - 1));
+  };
+
+  const field = "mt-1 w-full bg-transparent border-b border-ink/25 focus:border-coral outline-none py-2 font-serif font-light text-xl placeholder:text-ink/25";
+  const label = "font-brand text-[9px] tracking-[0.35em] uppercase text-ink/45";
+
+  return (
+    <section id="hello" className="relative bg-lagoon py-24 md:py-32 overflow-hidden">
+      <div className="absolute -left-28 top-6 w-[420px] text-deep opacity-40 pointer-events-none">
+        <Turtle rotate={110} swim={false} />
+      </div>
+      <div className="relative mx-auto max-w-6xl px-5 md:px-8">
+        <SectionHead
+          tone="dark"
+          label="05 — Say hello"
+          title="Pull up a chair. Let's talk."
+          intro="Three short steps, about forty seconds. Tap what fits — you only type what we truly need."
+        />
+
+        <div className="reveal mt-12 bg-sand rounded-md shadow-[0_30px_60px_-24px_rgba(0,0,0,.5)] overflow-hidden">
+          {sent ? (
+            <div className="text-center px-6 py-16 md:py-20 step-in">
+              <Turtle className="w-32 mx-auto" />
+              <p className="font-serif font-light text-4xl md:text-5xl mt-6">It's on its way.</p>
+              <p className="font-hand text-2xl text-lagoon mt-3">We'll write back within one working day.</p>
+              <div className="mt-8 flex flex-wrap justify-center gap-x-8 gap-y-3 text-xs text-ink/55">
+                <span>01 · we read it properly</span>
+                <span>02 · a short, human reply</span>
+                <span>03 · a 20-minute chat, no obligation</span>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* card header */}
+              <div className="flex flex-wrap items-start justify-between gap-4 border-b border-ink/15 px-6 py-5 md:px-10">
+                <div>
+                  <div className="font-brand text-[9px] tracking-[0.35em] uppercase text-ink/45">To · Palawan Collective</div>
+                  <div className="mt-4 flex items-center gap-2" role="group" aria-label={`Step ${step + 1} of 3`}>
+                    {[0, 1, 2].map((i) => (
+                      <span
+                        key={i}
+                        className={`h-1.5 rounded-full transition-all duration-500 ${
+                          i === step ? "w-10 bg-coral" : i < step ? "w-5 bg-ink/40" : "w-5 bg-ink/15"
+                        }`}
+                      />
+                    ))}
+                    <span className="ml-2 hidden sm:inline font-brand text-[9px] tracking-[0.3em] text-ink/45">
+                      0{step + 1} / 03
+                    </span>
+                  </div>
+                </div>
+                <div className="shrink-0 w-20 h-24 md:w-24 md:h-28 border border-dotted border-coral p-1.5 bg-foam grid place-items-center -rotate-2">
+                  <div className="text-center">
+                    <Turtle className="w-11 md:w-14 mx-auto" swim={false} />
+                    <div className="font-brand text-[5px] md:text-[6px] tracking-[0.28em] mt-1">PALAWAN · 2026</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-6 py-7 md:px-10 md:py-9 min-h-[420px] flex flex-col">
+                {step === 0 && (
+                  <div className="step-in">
+                    <h3 className="font-serif font-light text-3xl md:text-4xl">What's on your shoulders?</h3>
+                    <p className="mt-2 text-sm text-ink/55">Pick as many as you like. No wrong answers.</p>
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      {HANDOFFS.map((h) => {
+                        const on = picks.includes(h);
+                        return (
+                          <button
+                            key={h}
+                            type="button"
+                            onClick={() => toggle(h)}
+                            aria-pressed={on}
+                            className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
+                              on
+                                ? "bg-ink text-sand border-ink"
+                                : "border-ink/25 text-ink/75 hover:border-ink/60 hover:bg-ink/[0.04]"
+                            }`}
+                          >
+                            <span aria-hidden className={`grid place-items-center w-4 h-4 rounded-full border text-[9px] ${on ? "border-sand/60 bg-coral text-ink" : "border-ink/30 text-transparent"}`}>
+                              ✓
+                            </span>
+                            {h}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="mt-7">
+                      <span className={label}>Roughly how much time does it eat?</span>
+                      <div className="mt-2.5 flex flex-wrap gap-2">
+                        {LOADS.map((l) => (
+                          <button
+                            key={l}
+                            type="button"
+                            onClick={() => setLoad(l === load ? "" : l)}
+                            aria-pressed={load === l}
+                            className={`rounded-full px-4 py-1.5 text-sm border transition ${
+                              load === l ? "bg-lagoon text-sand border-lagoon" : "border-ink/20 text-ink/70 hover:border-ink/50"
+                            }`}
+                          >
+                            {l}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mt-7">
+                      <label htmlFor="note" className={label}>
+                        Anything we should know? <span className="normal-case tracking-normal text-ink/35">(optional)</span>
+                      </label>
+                      <textarea
+                        id="note"
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        rows={3}
+                        placeholder="A sentence in your own words is plenty — e.g. “I run a dental clinic and spend hours confirming appointments by phone.”"
+                        className="mt-1 w-full bg-transparent font-hand text-xl leading-[1.85rem] outline-none resize-none placeholder:text-ink/25 placeholder:font-sans placeholder:text-sm placeholder:leading-relaxed"
+                        style={{
+                          backgroundImage:
+                            "repeating-linear-gradient(transparent, transparent 1.82rem, rgba(20,20,20,.14) 1.82rem, rgba(20,20,20,.14) 1.83rem)",
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {step === 1 && (
+                  <div className="step-in">
+                    <h3 className="font-serif font-light text-3xl md:text-4xl">How do we write back?</h3>
+                    <p className="mt-2 text-sm text-ink/55">Only used to reply to you. No newsletter, no spam, ever.</p>
+                    <div className="mt-6 grid sm:grid-cols-2 gap-x-8 gap-y-5">
+                      <label className="block">
+                        <span className={label}>Your name *</span>
+                        <input
+                          value={who.name}
+                          onChange={(e) => setWho({ ...who, name: e.target.value })}
+                          className={field}
+                          autoComplete="name"
+                          placeholder="Maya"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className={label}>Your business</span>
+                        <input
+                          value={who.business}
+                          onChange={(e) => setWho({ ...who, business: e.target.value })}
+                          className={field}
+                          autoComplete="organization"
+                          placeholder="Salt & Stone Pilates"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className={label}>Email *</span>
+                        <input
+                          type="email"
+                          value={who.email}
+                          onChange={(e) => setWho({ ...who, email: e.target.value })}
+                          className={field}
+                          autoComplete="email"
+                          placeholder="you@yourbusiness.com"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className={label}>Website or Instagram</span>
+                        <input
+                          value={who.site}
+                          onChange={(e) => setWho({ ...who, site: e.target.value })}
+                          className={field}
+                          placeholder="optional — helps us understand you"
+                        />
+                      </label>
+                    </div>
+                    {tried && !canReview && (
+                      <p className="mt-5 font-hand text-xl text-coral" aria-live="polite">
+                        We just need a name and a working email — the rest can wait.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {step === 2 && (
+                  <div className="step-in">
+                    <div className="md:grid md:grid-cols-[1.15fr_1fr] md:gap-10">
+                      <div>
+                        <h3 className="font-serif font-light text-3xl md:text-4xl">A last look?</h3>
+                        <p className="mt-2 text-sm text-ink/55">This is what lands with us. Change anything before sending.</p>
+                        <div className="mt-5 font-hand text-2xl leading-tight text-ink/80">
+                          <p>Dear Palawan,</p>
+                          {picks.length > 0 && (
+                            <p className="mt-2">
+                              Please take this off my plate: <span className="text-lagoon">{picks.join(", ").toLowerCase()}</span>.
+                            </p>
+                          )}
+                          {load && <p className="mt-1">It costs me roughly {load.toLowerCase()} a week.</p>}
+                          {note.trim() && <p className="mt-2 text-ink/65">“{note.trim()}”</p>}
+                          <p className="mt-3">— {who.name}{who.business ? `, ${who.business}` : ""}</p>
+                        </div>
+                        {!canSend && (
+                          <p className="mt-4 font-hand text-xl text-coral" aria-live="polite">
+                            Pick one thing or write a line — otherwise we're just guessing.
+                          </p>
+                        )}
+                      </div>
+                      <div className="mt-6 md:mt-0 rounded-sm bg-foam/60 border border-ink/10 p-5">
+                        <div className="font-brand text-[9px] tracking-[0.3em] uppercase text-ink/45">The address</div>
+                        <dl className="mt-3 space-y-2.5 text-sm">
+                          {[
+                            ["From", who.name],
+                            ["Business", who.business || "—"],
+                            ["Email", who.email],
+                            ["Online", who.site || "—"],
+                          ].map(([k, v]) => (
+                            <div key={k} className="flex justify-between gap-4 border-b border-ink/10 pb-2">
+                              <dt className="text-ink/45 shrink-0">{k}</dt>
+                              <dd className="text-ink/80 text-right break-all">{v}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                        <button type="button" onClick={() => setStep(1)} className="mt-4 text-xs underline underline-offset-4 text-ink/50 hover:text-ink">
+                          edit details
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* controls */}
+                <div className="mt-auto pt-7 flex flex-wrap items-center gap-4">
+                  {step > 0 && (
+                    <button type="button" onClick={back} className="text-sm text-ink/55 hover:text-ink underline underline-offset-4">
+                      back
+                    </button>
+                  )}
+                  {step < 2 ? (
+                    <button
+                      type="button"
+                      onClick={next}
+                      className="group inline-flex items-center gap-3 bg-ink text-sand rounded-full pl-6 pr-1.5 py-1.5 hover:bg-lagoon transition"
+                    >
+                      <span className="text-base">{step === 0 ? "Next: how to reach you" : "Review the postcard"}</span>
+                      <span className="w-9 h-9 rounded-full bg-coral text-ink grid place-items-center">→</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={!canSend}
+                      onClick={() => setSent(true)}
+                      className="group inline-flex items-center gap-3 bg-ink text-sand rounded-full pl-6 pr-1.5 py-1.5 hover:bg-coral hover:text-ink transition disabled:opacity-40 disabled:hover:bg-ink disabled:hover:text-sand"
+                    >
+                      <span className="text-base">Send the postcard</span>
+                      <span className="w-9 h-9 rounded-full bg-coral text-ink grid place-items-center">→</span>
+                    </button>
+                  )}
+                  <span className="font-hand text-lg text-ink/40">no commitment, ever</span>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------- FOOTER ---------------- */
+function Footer() {
+  return (
+    <footer className="pt-20 pb-8">
+      <div className="mx-auto max-w-6xl px-5 md:px-8">
+        <div className="flex justify-center">
+          <Logo size="lg" swim />
+        </div>
+        <p className="text-center font-hand text-2xl text-lagoon mt-8">Slow and steady runs the business.</p>
+        <div className="mt-14 flex flex-col md:flex-row justify-between gap-3 text-xs text-ink/50 border-t border-ink/15 pt-5">
+          <span>© 2026 Palawan Collective</span>
+          <div className="flex gap-5">
+            <a href="#hello" className="hover:text-ink">
+              hello@palawancollective.com
+            </a>
+            <a href="#" className="hover:text-ink">
+              Instagram
+            </a>
+            <a href="#" className="hover:text-ink">
+              LinkedIn
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+export default function App() {
+  useReveal();
+  return (
+    <div className="grain">
+      <Nav />
+      <Hero />
+      <StampBand />
+      <Weight />
+      <How />
+      <Tuesday />
+      <Stories />
+      <Postcard />
+      <Footer />
+    </div>
+  );
+}

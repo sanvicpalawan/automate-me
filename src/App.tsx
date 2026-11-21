@@ -63,21 +63,29 @@ function SectionHead({
 function Nav({ links, cta }: { links: { label: string; href: string }[]; cta: { label: string; href: string } }) {
   const [solid, setSolid] = useState(false);
   const [open, setOpen] = useState(false);
+  const [hidden, setHidden] = useState(false);
   useEffect(() => {
-    const on = () => setSolid(window.scrollY > 40);
+    let previousY = window.scrollY;
+    const on = () => {
+      const y = window.scrollY;
+      setSolid(y > 40);
+      if (Math.abs(y - previousY) > 7) setHidden(y > 150 && y > previousY);
+      previousY = y;
+    };
     on();
     window.addEventListener("scroll", on, { passive: true });
     return () => window.removeEventListener("scroll", on);
   }, []);
+  useEffect(() => { if (open) setHidden(false); }, [open]);
   const link = "px-4 py-2 rounded-full hover:bg-ink/8 transition";
   return (
-    <header className="fixed top-0 inset-x-0 z-50">
-      <div className="mx-auto max-w-6xl px-5 md:px-8 py-3 flex items-center justify-between">
+    <header className={`fixed top-0 inset-x-0 z-50 transition-transform duration-300 ${hidden && !open ? "-translate-y-full" : "translate-y-0"}`}>
+      <div className="mx-auto max-w-6xl px-4 sm:px-5 md:px-8 py-3 flex items-center justify-between gap-2">
         <a
           href="#top"
-          className={`rounded-full pl-2 pr-4 py-1.5 transition ${solid ? "bg-sand/90 backdrop-blur border border-ink/10" : ""}`}
+          className={`rounded-full pl-1 pr-2 sm:pl-2 sm:pr-4 py-1.5 transition min-w-0 max-w-[72vw] ${solid ? "bg-sand/95 backdrop-blur border border-ink/10 shadow-sm" : ""}`}
         >
-          <Logo size="sm" />
+          <span className="block max-w-full [&_svg]:max-w-full"><Logo size="sm" /></span>
         </a>
         <nav
           className={`hidden md:flex items-center rounded-full p-1 text-sm transition ${solid ? "bg-sand/90 backdrop-blur border border-ink/10" : ""}`}
@@ -95,7 +103,7 @@ function Nav({ links, cta }: { links: { label: string; href: string }[]; cta: { 
           onClick={() => setOpen((o) => !o)}
           aria-label={open ? "Close menu" : "Open menu"}
           aria-expanded={open}
-          className="md:hidden ml-2 w-10 h-10 rounded-full border border-ink/20 grid place-items-center bg-sand/80 backdrop-blur"
+          className="md:hidden ml-2 w-12 h-12 shrink-0 rounded-full border border-ink/20 grid place-items-center bg-sand/95 backdrop-blur shadow-sm"
         >
           <span className="relative block w-4 h-3">
             <span className={`absolute left-0 right-0 h-px bg-ink transition-all ${open ? "top-1.5 rotate-45" : "top-0"}`} />
@@ -160,16 +168,14 @@ function Hero({
       </div>
 
       <div className="relative z-10 mx-auto max-w-6xl px-5 md:px-8 pt-28 md:pt-44 pb-20 md:pb-36">
-        {/* mobile turtle, in flow so it never sits under the words */}
-        <div className="lg:hidden relative h-[130px] sm:h-[190px] md:h-[220px] mt-3 mb-2">
-          <div className="absolute right-1 top-3 w-24 h-24 rounded-full bg-coral" />
-          <div className="drift absolute right-0 top-0 w-[155px] sm:w-[200px] md:w-[230px]">
-            <Turtle className="w-full h-auto" rotate={28} />
-          </div>
+        {/* Small editorial accent, not a tall empty illustration row. */}
+        <div className="lg:hidden pointer-events-none absolute right-4 top-[90px] sm:top-[105px] w-[105px] sm:w-[155px] md:w-[185px] aspect-square" aria-hidden>
+          <div className="absolute right-0 top-[12%] w-[74%] aspect-square rounded-full bg-coral" />
+          <div className="drift relative w-full"><Turtle className="w-full h-auto" rotate={28} /></div>
         </div>
-        <p className="rise font-hand text-2xl text-lagoon -rotate-1">{kicker}</p>
+        <p className="rise relative font-hand text-[22px] sm:text-2xl text-lagoon -rotate-1 max-w-[67%] sm:max-w-none">{kicker}</p>
         <h1
-          className="rise font-serif font-light text-[clamp(2.8rem,10.5vw,5rem)] md:text-7xl leading-[1.04] tracking-tight mt-3 sm:mt-4 max-w-[15ch]"
+          className="rise font-serif font-light text-[clamp(2.9rem,10.2vw,5rem)] md:text-7xl leading-[1.04] tracking-tight mt-5 sm:mt-7 lg:mt-4 max-w-[15ch]"
           style={{ animationDelay: ".12s" }}
         >
           {heading}
@@ -178,9 +184,9 @@ function Hero({
           {subheading}
         </p>
         <div className="rise mt-7 sm:mt-9 flex flex-wrap items-center gap-3 sm:gap-6" style={{ animationDelay: ".36s" }}>
-          <a href={ctaHref} className="inline-flex items-center gap-3 bg-ink text-sand rounded-full pl-6 pr-1.5 py-1.5 hover:bg-lagoon transition">
-            <span className="text-base">{ctaLabel}</span>
-            <span className="w-9 h-9 rounded-full bg-coral text-ink grid place-items-center">↓</span>
+          <a href={ctaHref} className="inline-flex max-w-full items-center justify-between gap-3 bg-ink text-sand rounded-full pl-5 sm:pl-6 pr-1.5 py-1.5 hover:bg-lagoon transition">
+            <span className="text-sm sm:text-base leading-tight">{ctaLabel}</span>
+            <span className="w-9 h-9 shrink-0 rounded-full bg-coral text-ink grid place-items-center">↓</span>
           </a>
           <span className="font-hand text-xl text-ink/45">{note}</span>
         </div>
@@ -414,6 +420,8 @@ function Tuesday() {
   const [v, setV] = useState(50);
   const [auto, setAuto] = useState(true);
   const [dragging, setDragging] = useState(false);
+  const [mobileAfter, setMobileAfter] = useState(false);
+  const touchStart = useRef<number | null>(null);
   const box = useRef<HTMLDivElement | null>(null);
   const vRef = useRef(v);
   vRef.current = v;
@@ -446,7 +454,7 @@ function Tuesday() {
         {items.map(([t, d]) => (
           <li key={t} className="flex gap-4 items-baseline border-b border-ink/12 pb-2.5">
             <span className="font-brand text-[10px] w-11 shrink-0 opacity-50">{t}</span>
-            <span className={`font-serif font-light text-[17px] md:text-2xl leading-snug ${after ? "" : "line-through decoration-coral/50 decoration-1"}`}>{d}</span>
+            <span className={`font-serif font-light text-[17px] md:text-2xl leading-snug ${after ? "" : "line-through decoration-coral decoration-2"}`}>{d}</span>
           </li>
         ))}
       </ul>
@@ -462,14 +470,29 @@ function Tuesday() {
           intro="It moves on its own — or drag the sun yourself to compare a normal Tuesday."
         />
 
-        {/* mobile & tablet: stacked, no drag */}
-        <div className="lg:hidden mt-10 grid gap-5 md:grid-cols-2">
-          <div className="rounded-2xl overflow-hidden border border-ink/15">
-            <Card items={BEFORE} />
+        {/* Mobile comparison: switch or swipe a single full-width card. */}
+        <div className="lg:hidden mt-8">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="inline-flex rounded-full border border-ink/20 bg-shell/60 p-1" role="group" aria-label="Compare a day before and after automation">
+              <button type="button" onClick={() => setMobileAfter(false)} aria-pressed={!mobileAfter}
+                className={`rounded-full px-5 py-3 text-sm transition-colors ${!mobileAfter ? "bg-ink text-sand" : "text-ink/65"}`}>Before</button>
+              <button type="button" onClick={() => setMobileAfter(true)} aria-pressed={mobileAfter}
+                className={`rounded-full px-5 py-3 text-sm transition-colors ${mobileAfter ? "bg-lagoon text-sand" : "text-ink/65"}`}>After</button>
+            </div>
+            <span className="font-hand text-lg text-lagoon/75">swipe ⇆</span>
           </div>
-          <div className="rounded-2xl overflow-hidden border border-ink/15">
-            <Card items={AFTER} after />
+          <div className="rounded-2xl overflow-hidden border border-ink/15 shadow-sm"
+            onTouchStart={(e) => { touchStart.current = e.touches[0]?.clientX ?? null; }}
+            onTouchEnd={(e) => {
+              if (touchStart.current === null) return;
+              const delta = (e.changedTouches[0]?.clientX ?? touchStart.current) - touchStart.current;
+              if (delta < -45) setMobileAfter(true);
+              if (delta > 45) setMobileAfter(false);
+              touchStart.current = null;
+            }}>
+            <Card items={mobileAfter ? AFTER : BEFORE} after={mobileAfter} />
           </div>
+          <p className="mt-3 text-xs text-ink/55 text-center">Tap Before / After or swipe the card.</p>
         </div>
 
         {/* desktop: self-moving comparison */}

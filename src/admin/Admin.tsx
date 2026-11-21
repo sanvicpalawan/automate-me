@@ -276,7 +276,7 @@ function InboxPanel(){
         {!!lead.handoffs?.length&&<div className="mt-4 flex flex-wrap gap-2">{lead.handoffs.map(item=><span key={item} className="rounded-full bg-[#edf3ef] px-3 py-1.5 text-xs text-[#3c6255]">{item}</span>)}</div>}
         {lead.note&&<p className="mt-4 whitespace-pre-wrap rounded-xl bg-[#f6f8f4] p-4 text-sm leading-relaxed text-[#3d5950]">{lead.note}</p>}
         <div className="mt-5 flex flex-wrap gap-2 border-t border-[#e5ebe4] pt-4">
-          <a className={btn} href={`mailto:${lead.email}?subject=${encodeURIComponent("Re: Your Palawan Collective inquiry")}`}>Reply via email</a>
+          <a className={btn} href={`https://mail.google.com/mail/?authuser=${encodeURIComponent("merqato.digital@gmail.com")}&view=cm&fs=1&to=${encodeURIComponent(lead.email)}&su=${encodeURIComponent("Re: Your Palawan Collective inquiry")}`} target="_blank" rel="noopener noreferrer">Reply in Gmail ↗</a>
           <select className={input+" !w-auto"} aria-label={`Status for ${lead.name}`} value={lead.status} onChange={e=>void update(lead.id,e.target.value as Lead["status"])}>
             <option value="new">New</option><option value="contacted">Contacted</option><option value="closed">Closed</option>
           </select>

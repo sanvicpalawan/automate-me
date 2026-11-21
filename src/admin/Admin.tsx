@@ -110,7 +110,12 @@ function PagePanel(){
   const [busy,setBusy]=useState(false);const [msg,setMsg]=useState("");
   const [adding,setAdding]=useState(false);const [type,setType]=useState("content");const [label,setLabel]=useState("");
   const [imagePick,setImagePick]=useState(false);
-  const refresh=async()=>{const x=await api.sections();if(x.ok)setSections((x.json?.sections||[]) as Editable[]);else setMsg(x.error||"Cannot load sections");};
+  const refresh=async()=>{const x=await api.sections();if(!x.ok){setMsg(x.error||"Unable to load");return;}
+  const rows=(x.json?.sections||[]) as Editable[];
+  const defaults=[["weight","Crack open the coconuts on your list.",10],["how","Three slow steps. That is the whole thing.",20],["tuesday","Same business. Different day.",30],["stories","From people who breathe easier now.",40]] as const;
+  const missing=defaults.filter(([key])=>!rows.some(s=>s.key===key)).map(([key,title,sortOrder])=>({key,title,subtitle:"",body:"",sortOrder,content:{}} as Editable));
+  setSections([...rows,...missing].map(s=>s.key==="footer"&&s.content.contact==="hello@palawancollective.com"?{...s,content:{...s.content,contact:"agent@merqato.digital"}}:s).sort((a,b)=>a.sortOrder-b.sortOrder));
+};
   useEffect(()=>{void refresh();},[]);
   const active=sections.find(s=>s.key===selected);
   function patch(p:Partial<Editable>){setSections(all=>all.map(s=>s.key===selected?{...s,...p}:s));}

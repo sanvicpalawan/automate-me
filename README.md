@@ -57,6 +57,24 @@ npm run build      # production build → dist/index.html (single file)
 npm run preview    # preview the production build locally
 ```
 
+
+## Backend (Neon Postgres)
+
+The site content (theme/fonts/colors/logo, header, hero, sections, FAQ, footer) is stored in a
+Neon Postgres database. Backend wiring:
+
+```bash
+DATABASE_URL=postgres://USER:PASSWORD@HOST/neondb?sslmode=require npm run db:migrate
+```
+
+- `db/schema.sql` — idempotent schema (safe to re-run) and seed of the current site content.
+- `scripts/migrate.mjs` — applies the schema; refuses to run without `DATABASE_URL`.
+- `.env.example` — template for local setup; real `.env*` files are git-ignored.
+- On Vercel, `DATABASE_URL` is a sensitive env var (production + preview) and `npm run db:migrate` runs as
+  part of the deploy build.
+
+> Local dev needs network access to Neon; the Arena sandbox cannot reach it.
+
 ## Project notes
 
 - **Path alias:** `@/*` maps to `src/*` (configured in both `vite.config.ts` and `tsconfig.json`).

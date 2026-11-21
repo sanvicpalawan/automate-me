@@ -26,6 +26,17 @@ export default async function handler(req, res) {
     return;
   }
 
+  if (req.method === "DELETE") {
+    if (!requireAdmin(req, res)) return;
+    const key = String(req.query?.key || "");
+    if (["header","hero","footer"].includes(key)) return res.status(400).json({ error: "Core sections cannot be deleted" });
+    if (!/^[a-z][a-z0-9_-]{1,60}$/.test(key)) return res.status(400).json({ error: "Invalid key" });
+    try {
+      const pool = getPool();
+      await pool.query("DELETE FROM site_sections WHERE key = $1", [key]);
+      return res.status(200).json({ ok: true });
+    } catch (error) { return res.status(500).json({ error: "Unable to delete section" }); }
+  }
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });
     return;
@@ -36,7 +47,7 @@ export default async function handler(req, res) {
     const pool = getPool();
     const b = req.body ?? {};
     const key = b.key;
-    if (!key || typeof key !== "string") {
+    if (typeof key !== "string" || !/^[a-z][a-z0-9_-]{1,60}$/.test(key)) {
       res.status(400).json({ error: "section key is required" });
       return;
     }
@@ -56,8 +67,8 @@ export default async function handler(req, res) {
         b.title ?? null,
         b.subtitle ?? null,
         b.body ?? null,
-        Number.isFinite(b.sortOrder) ? Number(b.sortOrder) : 0,
-        b.content ? JSON.stringify(b.content) : "{}",
+        Number.isFinite(Number(b.sortOrder)) ? Number(b.sortOrder) : 0,
+        b.content && typeof b.content === "object" ? JSON.stringify(b.content) : "{}",
       ]
     );
     const row = result.rows[0];

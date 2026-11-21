@@ -149,7 +149,7 @@ h1, h2, h3 { overflow-wrap: break-word; }
 @media (max-width: 767px) {
   section#weight, section#how, section#tuesday, section#stories,
   section#faq, section#hello { padding-top: 64px; padding-bottom: 72px; }
-  section#top > .relative.z-10 { padding-top: 84px; padding-bottom: 64px; }
+  section#top > .relative.z-10 { padding-top: 160px; padding-bottom: 64px; }
   .grain::before { opacity: .045; }
   #weight button .coco { max-width: 100%; }
   #weight button { min-width: 0; }
@@ -169,3 +169,17 @@ h1, h2, h3 { overflow-wrap: break-word; }
   html { scroll-behavior: auto; }
   .stamp-ink { opacity: 1 !important; }
 }
+
+/* The postcard should read as one piece of stationery on small screens. */
+.postcard-paper { position: relative; }
+.postcard-paper::before {
+  content: "AIR MAIL  •  A NOTE FROM YOU";
+  display: block;
+  padding: 9px 16px;
+  font-family: var(--font-brand);
+  font-size: 8px;
+  letter-spacing: .2em;
+  color: var(--color-lagoon);
+  background: repeating-linear-gradient(135deg, #e8e1d3 0 12px, #e5c6b9 12px 16px, #e8e1d3 16px 28px, #bbd4cb 28px 32px);
+}
+@media (min-width: 768px) { .postcard-paper::before { display: none; } }

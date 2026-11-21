@@ -1,3 +1,4 @@
+import InteractiveEditor from "./InteractiveEditor";
 import { useEffect, useState } from "react";
 import { api } from "./api";
 import { THEME_DEFAULT } from "../content";
@@ -167,7 +168,7 @@ function PagePanel(){
           <Text label="Subtitle" value={active.subtitle||""} onChange={v=>patch({subtitle:v})}/>
           <Text label="Description" multiline value={active.body||""} onChange={v=>patch({body:v})}/>
           <Field label="Layout"><select className={input} value={active.content.kind||"content"} onChange={e=>content({kind:e.target.value})}><option value="content">Text & image</option><option value="portfolio">Portfolio grid</option><option value="cards">Cards grid</option></select></Field>
-          {active.key==="weight"||active.key==="how"||active.key==="tuesday"||active.key==="stories"?<p className="rounded-xl bg-[#fff8e9] p-3 text-xs text-[#856c3d]">This legacy section uses a fixed visual component. Its heading and description will be editable here; item-level data is scheduled for a later component migration.</p>:null}
+          <InteractiveEditor section={active} onChange={content}/>
           <div className="flex items-center justify-between"><span className="text-xs font-semibold text-[#526963]">Section image</span><button className={outline+" !px-3 !py-2 !text-xs"} onClick={()=>setImagePick(v=>!v)}>{imagePick?"Close library":"Choose upload"}</button></div>
           <Text label="Image URL" hint="Upload images in the Media tab or choose an existing image here." value={active.content.image||""} onChange={v=>content({image:v})}/>
           {active.content.image && <img src={active.content.image} alt="" className="max-h-56 rounded-xl object-cover" />}

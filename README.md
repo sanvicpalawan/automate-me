@@ -57,6 +57,45 @@ npm run build      # production build → dist/index.html (single file)
 npm run preview    # preview the production build locally
 ```
 
+
+## Backend (Neon Postgres)
+
+The site content (theme/fonts/colors/logo, header, hero, sections, FAQ, footer) is stored in a
+Neon Postgres database. Backend wiring:
+
+```bash
+DATABASE_URL=postgres://USER:PASSWORD@HOST/neondb?sslmode=require npm run db:migrate
+```
+
+- `db/schema.sql` — idempotent schema (safe to re-run) and seed of the current site content.
+- `scripts/migrate.mjs` — applies the schema; refuses to run without `DATABASE_URL`.
+- `.env.example` — template for local setup; real `.env*` files are git-ignored.
+- On Vercel, `DATABASE_URL` is a sensitive env var (production + preview) and `npm run db:migrate` runs as
+  part of the deploy build.
+
+> Local dev needs network access to Neon; the Arena sandbox cannot reach it.
+
+
+## Admin back office (/#/admin)
+
+An authenticated admin UI for the site, served from `/#/admin` (hash-routed, no separate page):
+
+- **Theme** — site name, tagline, logo SVG, color palette, fonts (Google Fonts loaded at runtime).
+- **Sections** — header (nav links + CTA), hero (kicker/heading/subheading/CTA/note), footer (tagline/copyright/contact), plus generic sections (weight/how/tuesday/stories).
+- **FAQ** — add/edit/delete FAQ items, shown on the public site when present.
+- Auth: single admin user. Set `ADMIN_PASSWORD` in Vercel (Settings → Environment Variables) as a
+  sensitive var for production + preview, then redeploy. Sessions are signed cookies (`HttpOnly`, 7 days);
+  no extra tables required.
+
+Endpoints (Vercel functions in `api/`):
+- Public: `GET /api/content` (theme + sections + FAQ — read-only)
+- Admin (auth): `POST /api/login`, `POST /api/logout`, `GET /api/check`,
+  `PATCH /api/admin/theme`, `GET|POST /api/admin/sections`,
+  `GET|POST|PUT|DELETE /api/admin/faq`
+
+Note: the landing page itself only hydrates theme + hero/header/footer + FAQ from the database;
+the remaining marketing sections are still static by design.
+
 ## Project notes
 
 - **Path alias:** `@/*` maps to `src/*` (configured in both `vite.config.ts` and `tsconfig.json`).

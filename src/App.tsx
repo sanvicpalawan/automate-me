@@ -3,6 +3,20 @@ import Turtle from "./components/Turtle";
 import Logo from "./components/Logo";
 import Coconut from "./components/Coconut";
 import StampBand from "./components/StampBand";
+import Admin from "./admin/Admin";
+import {
+  fetchContent,
+  applyTheme,
+  sectionOf,
+  HEADER_DEFAULT,
+  HERO_DEFAULT,
+  FOOTER_DEFAULT,
+  type SiteContent,
+  type HeaderContent,
+  type HeroContent,
+  type FooterContent,
+  type FaqItem,
+} from "./content";
 
 function useReveal() {
   useEffect(() => {
@@ -46,7 +60,7 @@ function SectionHead({
 }
 
 /* ---------------- NAV ---------------- */
-function Nav() {
+function Nav({ links, cta }: { links: { label: string; href: string }[]; cta: { label: string; href: string } }) {
   const [solid, setSolid] = useState(false);
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -68,18 +82,13 @@ function Nav() {
         <nav
           className={`hidden md:flex items-center rounded-full p-1 text-sm transition ${solid ? "bg-sand/90 backdrop-blur border border-ink/10" : ""}`}
         >
-          {[
-            ["The weight", "#weight"],
-            ["How it works", "#how"],
-            ["A Tuesday", "#tuesday"],
-            ["Stories", "#stories"],
-          ].map(([l, h]) => (
-            <a key={h} href={h} className={link}>
-              {l}
+          {links.map((l) => (
+            <a key={l.href} href={l.href} className={link}>
+              {l.label}
             </a>
           ))}
-          <a href="#hello" className="ml-1 px-4 py-2 rounded-full bg-ink text-sand hover:bg-lagoon transition">
-            Say hello
+          <a href={cta.href} className="ml-1 px-4 py-2 rounded-full bg-ink text-sand hover:bg-lagoon transition">
+            {cta.label}
           </a>
         </nav>
         <button
@@ -96,20 +105,14 @@ function Nav() {
       </div>
       {open && (
         <div className="md:hidden mx-4 mt-1 rounded-2xl bg-sand/95 backdrop-blur border border-ink/10 shadow-lg p-2">
-          {[
-            ["The weight", "#weight"],
-            ["How it works", "#how"],
-            ["A Tuesday", "#tuesday"],
-            ["Stories", "#stories"],
-            ["Say hello", "#hello"],
-          ].map(([l, h]) => (
+          {[...links, cta].map((l) => (
             <a
-              key={h}
-              href={h}
+              key={l.href}
+              href={l.href}
               onClick={() => setOpen(false)}
               className="block px-4 py-3 rounded-xl text-ink/80 hover:bg-ink hover:text-sand transition"
             >
-              {l}
+              {l.label}
             </a>
           ))}
         </div>
@@ -119,7 +122,21 @@ function Nav() {
 }
 
 /* ---------------- HERO ---------------- */
-function Hero() {
+function Hero({
+  kicker,
+  heading,
+  subheading,
+  ctaLabel,
+  ctaHref,
+  note,
+}: {
+  kicker: string;
+  heading: string;
+  subheading: string;
+  ctaLabel: string;
+  ctaHref: string;
+  note: string;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [m, setM] = useState({ x: 0, y: 0 });
   return (
@@ -150,23 +167,22 @@ function Hero() {
             <Turtle className="w-full h-auto" rotate={28} />
           </div>
         </div>
-        <p className="rise font-hand text-2xl text-lagoon -rotate-1">psst… you look tired.</p>
+        <p className="rise font-hand text-2xl text-lagoon -rotate-1">{kicker}</p>
         <h1
           className="rise font-serif font-light text-[11vw] md:text-7xl leading-[1.02] tracking-tight mt-4 max-w-[15ch]"
           style={{ animationDelay: ".12s" }}
         >
-          Your business can <em className="italic text-lagoon">swim</em> on its own.
+          {heading}
         </h1>
         <p className="rise mt-7 max-w-md text-lg leading-relaxed text-ink/70" style={{ animationDelay: ".24s" }}>
-          We take the repetitive, every-single-day work off your shoulders, so you can get back to the part you
-          actually love. Or go to the beach. We don't judge.
+          {subheading}
         </p>
         <div className="rise mt-9 flex flex-wrap items-center gap-6" style={{ animationDelay: ".36s" }}>
-          <a href="#weight" className="inline-flex items-center gap-3 bg-ink text-sand rounded-full pl-6 pr-1.5 py-1.5 hover:bg-lagoon transition">
-            <span className="text-base">Show me how light it gets</span>
+          <a href={ctaHref} className="inline-flex items-center gap-3 bg-ink text-sand rounded-full pl-6 pr-1.5 py-1.5 hover:bg-lagoon transition">
+            <span className="text-base">{ctaLabel}</span>
             <span className="w-9 h-9 rounded-full bg-coral text-ink grid place-items-center">↓</span>
           </a>
-          <span className="font-hand text-xl text-ink/45">(no jargon, promise)</span>
+          <span className="font-hand text-xl text-ink/45">{note}</span>
         </div>
       </div>
     </section>
@@ -880,20 +896,62 @@ function Postcard() {
   );
 }
 
+/* ---------------- FAQ ---------------- */
+function FaqSection({ items }: { items: FaqItem[] }) {
+  if (!items.length) return null;
+  return (
+    <section id="faq" className="py-24 md:py-32">
+      <div className="mx-auto max-w-4xl px-5 md:px-8">
+        <div className="flex items-center gap-4">
+          <span className="w-8 h-px bg-lagoon" />
+          <span className="font-brand text-[10px] tracking-[0.35em] uppercase text-lagoon">FAQ</span>
+        </div>
+        <h2 className="font-serif font-light text-4xl md:text-[3.25rem] leading-[1.08] tracking-tight mt-6">
+          Frequently asked questions
+        </h2>
+        <div className="mt-10 divide-y divide-ink/15 border-y border-ink/15">
+          {items.map((item) => (
+            <details key={item.id} className="group py-5">
+              <summary className="cursor-pointer flex items-center justify-between gap-6 list-none">
+                <span className="font-serif text-xl md:text-2xl">{item.question}</span>
+                <span
+                  aria-hidden
+                  className="shrink-0 w-8 h-8 rounded-full border border-ink/25 grid place-items-center text-ink/50 transition group-open:rotate-45 group-open:border-ink/50 group-open:text-ink"
+                >
+                  +
+                </span>
+              </summary>
+              <p className="mt-4 text-ink/70 leading-relaxed whitespace-pre-wrap">{item.answer}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ---------------- FOOTER ---------------- */
-function Footer() {
+function Footer({
+  tagline,
+  copyright,
+  contact,
+}: {
+  tagline: string;
+  copyright: string;
+  contact: string;
+}) {
   return (
     <footer className="pt-20 pb-8">
       <div className="mx-auto max-w-6xl px-5 md:px-8">
         <div className="flex justify-center">
           <Logo size="lg" swim />
         </div>
-        <p className="text-center font-hand text-2xl text-lagoon mt-8">Slow and steady runs the business.</p>
+        <p className="text-center font-hand text-2xl text-lagoon mt-8">{tagline}</p>
         <div className="mt-14 flex flex-col md:flex-row justify-between gap-3 text-xs text-ink/50 border-t border-ink/15 pt-5">
-          <span>© 2026 Palawan Collective</span>
+          <span>{copyright}</span>
           <div className="flex gap-5">
-            <a href="#hello" className="hover:text-ink">
-              hello@palawancollective.com
+            <a href={`mailto:${contact}`} className="hover:text-ink">
+              {contact}
             </a>
             <a href="#" className="hover:text-ink">
               Instagram
@@ -908,19 +966,65 @@ function Footer() {
   );
 }
 
-export default function App() {
+function SiteApp() {
+  const [site, setSite] = useState<SiteContent | null>(null);
   useReveal();
+
+  useEffect(() => {
+    let alive = true;
+    fetchContent().then((s) => {
+      if (!alive || !s) return;
+      setSite(s);
+      if (s.theme) applyTheme(s.theme);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const headerContent = sectionOf(site, "header")?.content as HeaderContent | undefined;
+  const heroContent = sectionOf(site, "hero")?.content as HeroContent | undefined;
+  const footerContent = sectionOf(site, "footer")?.content as FooterContent | undefined;
+  const faqItems: FaqItem[] = (site?.faq as FaqItem[] | undefined) ?? [];
+
   return (
     <div className="grain">
-      <Nav />
-      <Hero />
+      <Nav links={headerContent?.links ?? HEADER_DEFAULT.links} cta={headerContent?.cta ?? HEADER_DEFAULT.cta} />
+      <Hero
+        kicker={heroContent?.kicker ?? HERO_DEFAULT.kicker}
+        heading={heroContent?.heading ?? HERO_DEFAULT.heading}
+        subheading={heroContent?.subheading ?? HERO_DEFAULT.subheading}
+        ctaLabel={heroContent?.cta?.label ?? HERO_DEFAULT.cta.label}
+        ctaHref={heroContent?.cta?.href ?? HERO_DEFAULT.cta.href}
+        note={heroContent?.note ?? HERO_DEFAULT.note}
+      />
       <StampBand />
       <Weight />
       <How />
       <Tuesday />
       <Stories />
+      <FaqSection items={faqItems} />
       <Postcard />
-      <Footer />
+      <Footer
+        tagline={footerContent?.tagline ?? FOOTER_DEFAULT.tagline}
+        copyright={footerContent?.copyright ?? FOOTER_DEFAULT.copyright}
+        contact={footerContent?.contact ?? FOOTER_DEFAULT.contact}
+      />
     </div>
   );
+}
+
+function isAdminRoute() {
+  return window.location.hash.startsWith("#/admin");
+}
+
+export default function App() {
+  const [isAdmin, setIsAdmin] = useState(isAdminRoute);
+  useEffect(() => {
+    const onHash = () => setIsAdmin(isAdminRoute());
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+  if (isAdmin) return <Admin />;
+  return <SiteApp />;
 }

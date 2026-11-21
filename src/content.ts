@@ -95,7 +95,7 @@ export type FooterContent = {
 export const FOOTER_DEFAULT: FooterContent = {
   tagline: "Slow and steady runs the business.",
   copyright: "© 2026 Palawan Collective",
-  contact: "hello@palawancollective.com",
+  contact: "agent@merqato.digital",
 };
 
 export function sectionOf(site: SiteContent | null, key: string): Section | null {

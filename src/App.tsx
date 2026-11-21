@@ -16,6 +16,7 @@ import {
   type HeroContent,
   type FooterContent,
   type FaqItem,
+  type Section,
 } from "./content";
 
 function useReveal() {
@@ -60,7 +61,7 @@ function SectionHead({
 }
 
 /* ---------------- NAV ---------------- */
-function Nav({ links, cta }: { links: { label: string; href: string }[]; cta: { label: string; href: string } }) {
+function Nav({ links, cta, logoSrc }: { links: { label: string; href: string }[]; cta: { label: string; href: string }; logoSrc?: string }) {
   const [solid, setSolid] = useState(false);
   const [open, setOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -85,7 +86,7 @@ function Nav({ links, cta }: { links: { label: string; href: string }[]; cta: { 
           href="#top"
           className={`rounded-full pl-1 pr-2 sm:pl-2 sm:pr-4 py-1.5 transition min-w-0 max-w-[72vw] ${solid ? "bg-sand/95 backdrop-blur border border-ink/10 shadow-sm" : ""}`}
         >
-          <span className="block max-w-full [&_svg]:max-w-full"><Logo size="sm" /></span>
+          {logoSrc ? <img src={logoSrc} alt="Palawan Collective" className="h-10 w-auto max-w-[66vw] object-contain"/> : <span className="block max-w-full [&_svg]:max-w-full"><Logo size="sm" /></span>}
         </a>
         <nav
           className={`hidden md:flex items-center rounded-full p-1 text-sm transition ${solid ? "bg-sand/90 backdrop-blur border border-ink/10" : ""}`}
@@ -137,6 +138,7 @@ function Hero({
   ctaLabel,
   ctaHref,
   note,
+  imageUrl,
 }: {
   kicker: string;
   heading: string;
@@ -144,6 +146,7 @@ function Hero({
   ctaLabel: string;
   ctaHref: string;
   note: string;
+  imageUrl?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [m, setM] = useState({ x: 0, y: 0 });
@@ -163,7 +166,7 @@ function Hero({
         style={{ transform: `translate(${m.x * 30}px, ${m.y * 22}px) rotate(${m.x * 5}deg)` }}
       >
         <div className="drift">
-          <Turtle className="w-full h-auto" rotate={28} />
+          {imageUrl ? <img src={imageUrl} alt="" className="w-full h-auto object-contain" /> : <Turtle className="w-full h-auto" rotate={28} />}
         </div>
       </div>
 
@@ -171,7 +174,7 @@ function Hero({
         {/* Small editorial accent, not a tall empty illustration row. */}
         <div className="lg:hidden pointer-events-none absolute right-4 top-[90px] sm:top-[105px] w-[105px] sm:w-[155px] md:w-[185px] aspect-square" aria-hidden>
           <div className="absolute right-0 top-[12%] w-[74%] aspect-square rounded-full bg-coral" />
-          <div className="drift relative w-full"><Turtle className="w-full h-auto" rotate={28} /></div>
+          <div className="drift relative w-full">{imageUrl ? <img src={imageUrl} alt="" className="w-full h-auto object-contain" /> : <Turtle className="w-full h-auto" rotate={28} />}</div>
         </div>
         <p className="rise relative font-hand text-[22px] sm:text-2xl text-lagoon -rotate-1 max-w-[67%] sm:max-w-none">{kicker}</p>
         <h1
@@ -208,10 +211,11 @@ const CHORES: { t: string; h: number; skin: number; seed: number }[] = [
   { t: "Reconciling the receipts", h: 2, skin: 1, seed: 61 },
 ];
 
-function Weight() {
+function Weight({ section }: { section?: Section }) {
   const [gone, setGone] = useState<number[]>([]);
-  const hours = CHORES.reduce((s, c, i) => (gone.includes(i) ? s + c.h : s), 0);
-  const total = CHORES.reduce((s, c) => s + c.h, 0);
+  const chores = Array.isArray(section?.content?.chores) ? section.content.chores as typeof CHORES : CHORES;
+  const hours = chores.reduce((s, c, i) => (gone.includes(i) ? s + c.h : s), 0);
+  const total = chores.reduce((s, c) => s + c.h, 0);
   const line =
     gone.length === 0
       ? "Tap a coconut to crack it open."
@@ -229,8 +233,8 @@ function Weight() {
       <div className="mx-auto max-w-6xl px-5 md:px-8">
         <SectionHead
           label="01 — The weight"
-          title="Crack open the coconuts on your list."
-          intro="Some jobs are just hard shells: plenty of effort, not much inside. Tap one to see what happens when it stops being your problem."
+          title={section?.title || "Crack open the coconuts on your list."}
+          intro={section?.body || "Some jobs are just hard shells: plenty of effort, not much inside. Tap one to see what happens when it stops being your problem."}
         />
 
         <div className="mt-12 md:mt-14 grid lg:grid-cols-[300px_1fr] gap-10 md:gap-12 lg:gap-16 items-start">
@@ -247,7 +251,7 @@ function Weight() {
               <p className="font-hand text-2xl text-coral mt-5">{line}</p>
               <div className="mt-5 flex items-center justify-between text-xs text-sand/45">
                 <span>
-                  {gone.length} of {CHORES.length} set down
+                  {gone.length} of {chores.length} set down
                 </span>
                 {gone.length > 0 && (
                   <button onClick={() => setGone([])} className="underline underline-offset-4 hover:text-sand">
@@ -257,7 +261,7 @@ function Weight() {
               </div>
             </div>
             <button
-              onClick={() => setGone(CHORES.map((_, i) => i))}
+              onClick={() => setGone(chores.map((_, i) => i))}
               className="mt-4 w-full rounded-full border border-ink/40 py-3 hover:bg-ink hover:text-sand hover:border-ink transition"
             >
               Crack them all open
@@ -265,7 +269,7 @@ function Weight() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 sm:gap-x-8 gap-y-6 md:gap-y-10">
-            {CHORES.map((c, i) => {
+            {chores.map((c, i) => {
               const isGone = gone.includes(i);
               return (
                 <button key={i} onClick={() => toggle(i)} className="group text-left" aria-pressed={isGone}>
@@ -317,8 +321,9 @@ const STEPS = [
   },
 ];
 
-function How() {
+function How({ section }: { section?: Section }) {
   const [active, setActive] = useState(0);
+  const steps = Array.isArray(section?.content?.steps) ? section.content.steps as typeof STEPS : STEPS;
   const rows = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
@@ -340,8 +345,8 @@ function How() {
         <SectionHead
           tone="dark"
           label="02 — How it works"
-          title="Three slow steps. That is the whole thing."
-          intro="No forty-page proposal. No technical language. Three stages that feel like a conversation."
+          title={section?.title || "Three slow steps. That is the whole thing."}
+          intro={section?.body || "No forty-page proposal. No technical language. Three stages that feel like a conversation."}
         />
 
         <div className="relative mt-14 md:mt-20">
@@ -349,12 +354,12 @@ function How() {
           <div className="absolute left-[9px] md:left-[15px] top-3 bottom-6 w-px bg-sand/15" aria-hidden />
           <div
             className="absolute left-[9px] md:left-[15px] top-3 w-px bg-coral transition-all duration-700 ease-out"
-            style={{ height: `calc(${((active + 0.55) / STEPS.length) * 100}% - 12px)` }}
+            style={{ height: `calc(${((active + 0.55) / steps.length) * 100}% - 12px)` }}
             aria-hidden
           />
 
           <ol className="space-y-12 md:space-y-16">
-            {STEPS.map((s, i) => {
+            {steps.map((s, i) => {
               const on = i === active;
               return (
                 <li key={s.n}>
@@ -416,11 +421,13 @@ const AFTER: string[][] = [
   ["18:30", "Sunset swim"],
 ];
 
-function Tuesday() {
+function Tuesday({ section }: { section?: Section }) {
   const [v, setV] = useState(50);
   const [auto, setAuto] = useState(true);
   const [dragging, setDragging] = useState(false);
   const [mobileAfter, setMobileAfter] = useState(false);
+  const before = Array.isArray(section?.content?.before) ? section.content.before as string[][] : BEFORE;
+  const after = Array.isArray(section?.content?.after) ? section.content.after as string[][] : AFTER;
   const touchStart = useRef<number | null>(null);
   const box = useRef<HTMLDivElement | null>(null);
   const vRef = useRef(v);
@@ -466,8 +473,8 @@ function Tuesday() {
       <div className="mx-auto max-w-6xl px-5 md:px-8">
         <SectionHead
           label="03 — A Tuesday"
-          title="Same business. Different day."
-          intro="It moves on its own — or drag the sun yourself to compare a normal Tuesday."
+          title={section?.title || "Same business. Different day."}
+          intro={section?.body || "It moves on its own — or drag the sun yourself to compare a normal Tuesday."}
         />
 
         {/* Mobile comparison: switch or swipe a single full-width card. */}
@@ -490,7 +497,7 @@ function Tuesday() {
               if (delta > 45) setMobileAfter(false);
               touchStart.current = null;
             }}>
-            <Card items={mobileAfter ? AFTER : BEFORE} after={mobileAfter} />
+            <Card items={mobileAfter ? after : before} after={mobileAfter} />
           </div>
           <p className="mt-3 text-xs text-ink/55 text-center">Tap Before / After or swipe the card.</p>
         </div>
@@ -513,10 +520,10 @@ function Tuesday() {
             onPointerCancel={() => setDragging(false)}
           >
             <div className="absolute inset-0">
-              <Card items={BEFORE} />
+              <Card items={before} />
             </div>
             <div className="absolute inset-0 z-[1]" style={{ clipPath: `inset(0 0 0 ${v}%)` }}>
-              <Card items={AFTER} after />
+              <Card items={after} after />
             </div>
 
             {/* fixed labels so both states stay readable */}
@@ -578,16 +585,17 @@ function Tuesday() {
 }
 
 /* ---------------- STORIES ---------------- */
-function Stories() {
-  const notes = [
+function Stories({ section }: { section?: Section }) {
+  const defaultNotes = [
     { q: "I used to spend Sundays on admin. Now I spend them with my kids. That's the whole review.", w: "Maya", b: "Pilates studio" },
     { q: "Customers think I hired three people. I didn't. I just stopped doing everything by hand.", w: "Tomás", b: "Family bakery" },
     { q: "They explained everything like a friend would. I never once felt stupid. Rare.", w: "Priya", b: "Interior design" },
   ];
+  const notes = Array.isArray(section?.content?.testimonials) ? section.content.testimonials as typeof defaultNotes : defaultNotes;
   return (
     <section id="stories" className="py-24 md:py-32 bg-shell/60">
       <div className="mx-auto max-w-6xl px-5 md:px-8">
-        <SectionHead label="04 — Stories" title="From people who breathe easier now." />
+        <SectionHead label="04 — Stories" title={section?.title || "From people who breathe easier now."} intro={section?.body || undefined}/>
         <div className="mt-10 md:mt-14 grid lg:grid-cols-3 gap-x-12 gap-y-10">
           {notes.map((n, i) => (
             <figure key={i} className="reveal border-t border-ink/25 pt-6" style={{ transitionDelay: `${i * 110}ms` }}>
@@ -982,16 +990,18 @@ function Footer({
   tagline,
   copyright,
   contact,
+  logoSrc,
 }: {
   tagline: string;
   copyright: string;
   contact: string;
+  logoSrc?: string;
 }) {
   return (
     <footer className="pt-14 md:pt-20 pb-8">
       <div className="mx-auto max-w-6xl px-5 md:px-8">
         <div className="mx-auto w-full max-w-[300px] sm:max-w-[390px] md:max-w-none flex justify-center [&_svg]:max-w-full">
-          <Logo size="lg" swim />
+          {logoSrc ? <img src={logoSrc} alt="Palawan Collective" className="max-h-56 w-full object-contain"/> : <Logo size="lg" swim />}
         </div>
         <p className="text-center font-hand text-xl sm:text-2xl text-lagoon mt-5 md:mt-8">{tagline}</p>
         <div className="mt-12 md:mt-14 border-t border-ink/15 pt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
@@ -1004,6 +1014,29 @@ function Footer({
       </div>
     </footer>
   );
+}
+
+/* CMS-controlled section layouts: content, cards, and portfolio. */
+function ManagedSection({ section }: { section: Section }) {
+  const content = section.content || {};
+  const items = Array.isArray(content.items) ? content.items as {title?:string;description?:string;image?:string;href?:string}[] : [];
+  const layout = content.kind || "content";
+  const image = typeof content.image === "string" ? content.image : "";
+  return <section id={section.key} className="py-20 md:py-28">
+    <div className="mx-auto max-w-6xl px-5 md:px-8">
+      <SectionHead label={section.subtitle || (layout === "portfolio" ? "Selected projects" : "What we do")} title={section.title || "Explore"} intro={section.body || undefined}/>
+      {layout === "content" && image && <img src={image} alt={section.title || ""} loading="lazy" className="mt-10 w-full rounded-2xl max-h-[540px] object-cover"/>}
+      {(layout === "cards" || layout === "portfolio") && <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((item, i) => <article key={i} className="overflow-hidden rounded-2xl border border-ink/15 bg-shell/40">
+          {item.image && <img src={item.image} alt={item.title || "Project image"} loading="lazy" className="aspect-[4/3] w-full object-cover"/>}
+          <div className="p-5 sm:p-6"><h3 className="font-serif text-2xl">{item.title || "Untitled"}</h3>
+            {item.description && <p className="mt-3 text-ink/65 text-sm leading-relaxed">{item.description}</p>}
+            {item.href && <a href={item.href} target="_blank" rel="noopener noreferrer" className="mt-5 inline-block border-b border-lagoon pb-1 text-sm font-medium text-lagoon hover:text-ink">View project ↗</a>}
+          </div>
+        </article>)}
+      </div>}
+    </div>
+  </section>;
 }
 
 function SiteApp() {
@@ -1026,10 +1059,21 @@ function SiteApp() {
   const heroContent = sectionOf(site, "hero")?.content as HeroContent | undefined;
   const footerContent = sectionOf(site, "footer")?.content as FooterContent | undefined;
   const faqItems: FaqItem[] = (site?.faq as FaqItem[] | undefined) ?? [];
+  const editorSections = (site?.sections || []).filter(s => !["header","hero","footer"].includes(s.key));
+  const builtins = ["weight","how","tuesday","stories"];
+  const sortedSections: Section[] = [...editorSections, ...builtins.filter(k => !editorSections.some(s=>s.key===k)).map((key,i)=>({
+    key, title:null, subtitle:null, body:null, content:{}, sortOrder:10+i*10
+  }))].sort((a,b)=>a.sortOrder-b.sortOrder);
+  const showSection = (s:Section) => !s.content?.hidden;
+  const logoSrc = /^\/api\/media\?id=\d+$/.test(site?.theme?.logoSvg || "") ? site!.theme!.logoSvg! : undefined;
+  const publicLinks = headerContent?.links ?? HEADER_DEFAULT.links;
+  const portfolioEntry = sortedSections.find(s=>s.content?.kind==="portfolio" && showSection(s));
+  const navLinks = portfolioEntry && !publicLinks.some(l=>l.href==="#"+portfolioEntry.key)
+    ? [...publicLinks, {label:"Portfolio",href:"#"+portfolioEntry.key}] : publicLinks;
 
   return (
     <div className="grain">
-      <Nav links={headerContent?.links ?? HEADER_DEFAULT.links} cta={headerContent?.cta ?? HEADER_DEFAULT.cta} />
+      <Nav links={navLinks} cta={headerContent?.cta ?? HEADER_DEFAULT.cta} logoSrc={logoSrc}/>
       <Hero
         kicker={heroContent?.kicker ?? HERO_DEFAULT.kicker}
         heading={heroContent?.heading ?? HERO_DEFAULT.heading}
@@ -1037,18 +1081,25 @@ function SiteApp() {
         ctaLabel={heroContent?.cta?.label ?? HERO_DEFAULT.cta.label}
         ctaHref={heroContent?.cta?.href ?? HERO_DEFAULT.cta.href}
         note={heroContent?.note ?? HERO_DEFAULT.note}
+        imageUrl={/^\/api\/media\?id=\d+$/.test((heroContent as any)?.image||"") ? (heroContent as any).image : undefined}
       />
       <StampBand />
-      <Weight />
-      <How />
-      <Tuesday />
-      <Stories />
+      {sortedSections.filter(showSection).map(section => {
+        switch (section.key) {
+          case "weight": return <Weight key={section.key} section={section}/>;
+          case "how": return <How key={section.key} section={section}/>;
+          case "tuesday": return <Tuesday key={section.key} section={section}/>;
+          case "stories": return <Stories key={section.key} section={section}/>;
+          default: return <ManagedSection key={section.key} section={section}/>;
+        }
+      })}
       <FaqSection items={faqItems} />
       <Postcard />
       <Footer
         tagline={footerContent?.tagline ?? FOOTER_DEFAULT.tagline}
         copyright={footerContent?.copyright ?? FOOTER_DEFAULT.copyright}
-        contact={footerContent?.contact ?? FOOTER_DEFAULT.contact}
+        contact={footerContent?.contact === "hello@palawancollective.com" ? "agent@merqato.digital" : footerContent?.contact ?? FOOTER_DEFAULT.contact}
+        logoSrc={logoSrc}
       />
     </div>
   );

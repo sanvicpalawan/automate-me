@@ -53,5 +53,16 @@ INSERT INTO site_sections (key, title, subtitle, sort_order, content) VALUES
   ('hero', 'Your business can swim on its own.', 'psst… you look tired.', 1,
    '{"kicker":"psst… you look tired.","heading":"Your business can swim on its own.","subheading":"We take the repetitive, every-single-day work off your shoulders, so you can get back to the part you actually love. Or go to the beach. We don''t judge.","cta":{"label":"Show me how light it gets","href":"#weight"},"note":"(no jargon, promise)"}'),
   ('footer', 'Slow and steady runs the business.', '', 2,
-   '{"tagline":"Slow and steady runs the business.","copyright":"© 2026 Palawan Collective","contact":"hello@palawancollective.com"}')
+   '{"tagline":"Slow and steady runs the business.","copyright":"© 2026 Palawan Collective","contact":"agent@merqato.digital"}')
 ON CONFLICT (key) DO NOTHING;
+
+-- Media binary storage and section publishing, safe for existing installations.
+ALTER TABLE site_sections ADD COLUMN IF NOT EXISTS is_visible BOOLEAN NOT NULL DEFAULT true;
+CREATE TABLE IF NOT EXISTS uploaded_media (
+ id BIGSERIAL PRIMARY KEY,
+ filename TEXT NOT NULL,
+ mime_type TEXT NOT NULL,
+ alt_text TEXT NOT NULL DEFAULT '',
+ bytes BYTEA NOT NULL,
+ created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

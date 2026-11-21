@@ -211,8 +211,9 @@ const CHORES: { t: string; h: number; skin: number; seed: number }[] = [
 
 function Weight({ section }: { section?: Section }) {
   const [gone, setGone] = useState<number[]>([]);
-  const hours = CHORES.reduce((s, c, i) => (gone.includes(i) ? s + c.h : s), 0);
-  const total = CHORES.reduce((s, c) => s + c.h, 0);
+  const chores = Array.isArray(section?.content?.chores) ? section.content.chores as typeof CHORES : CHORES;
+  const hours = chores.reduce((s, c, i) => (gone.includes(i) ? s + c.h : s), 0);
+  const total = chores.reduce((s, c) => s + c.h, 0);
   const line =
     gone.length === 0
       ? "Tap a coconut to crack it open."
@@ -248,7 +249,7 @@ function Weight({ section }: { section?: Section }) {
               <p className="font-hand text-2xl text-coral mt-5">{line}</p>
               <div className="mt-5 flex items-center justify-between text-xs text-sand/45">
                 <span>
-                  {gone.length} of {CHORES.length} set down
+                  {gone.length} of {chores.length} set down
                 </span>
                 {gone.length > 0 && (
                   <button onClick={() => setGone([])} className="underline underline-offset-4 hover:text-sand">
@@ -258,7 +259,7 @@ function Weight({ section }: { section?: Section }) {
               </div>
             </div>
             <button
-              onClick={() => setGone(CHORES.map((_, i) => i))}
+              onClick={() => setGone(chores.map((_, i) => i))}
               className="mt-4 w-full rounded-full border border-ink/40 py-3 hover:bg-ink hover:text-sand hover:border-ink transition"
             >
               Crack them all open
@@ -266,7 +267,7 @@ function Weight({ section }: { section?: Section }) {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 sm:gap-x-8 gap-y-6 md:gap-y-10">
-            {CHORES.map((c, i) => {
+            {chores.map((c, i) => {
               const isGone = gone.includes(i);
               return (
                 <button key={i} onClick={() => toggle(i)} className="group text-left" aria-pressed={isGone}>
@@ -320,6 +321,7 @@ const STEPS = [
 
 function How({ section }: { section?: Section }) {
   const [active, setActive] = useState(0);
+  const steps = Array.isArray(section?.content?.steps) ? section.content.steps as typeof STEPS : STEPS;
   const rows = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
@@ -350,12 +352,12 @@ function How({ section }: { section?: Section }) {
           <div className="absolute left-[9px] md:left-[15px] top-3 bottom-6 w-px bg-sand/15" aria-hidden />
           <div
             className="absolute left-[9px] md:left-[15px] top-3 w-px bg-coral transition-all duration-700 ease-out"
-            style={{ height: `calc(${((active + 0.55) / STEPS.length) * 100}% - 12px)` }}
+            style={{ height: `calc(${((active + 0.55) / steps.length) * 100}% - 12px)` }}
             aria-hidden
           />
 
           <ol className="space-y-12 md:space-y-16">
-            {STEPS.map((s, i) => {
+            {steps.map((s, i) => {
               const on = i === active;
               return (
                 <li key={s.n}>
@@ -422,6 +424,8 @@ function Tuesday({ section }: { section?: Section }) {
   const [auto, setAuto] = useState(true);
   const [dragging, setDragging] = useState(false);
   const [mobileAfter, setMobileAfter] = useState(false);
+  const before = Array.isArray(section?.content?.before) ? section.content.before as string[][] : BEFORE;
+  const after = Array.isArray(section?.content?.after) ? section.content.after as string[][] : AFTER;
   const touchStart = useRef<number | null>(null);
   const box = useRef<HTMLDivElement | null>(null);
   const vRef = useRef(v);
@@ -491,7 +495,7 @@ function Tuesday({ section }: { section?: Section }) {
               if (delta > 45) setMobileAfter(false);
               touchStart.current = null;
             }}>
-            <Card items={mobileAfter ? AFTER : BEFORE} after={mobileAfter} />
+            <Card items={mobileAfter ? after : before} after={mobileAfter} />
           </div>
           <p className="mt-3 text-xs text-ink/55 text-center">Tap Before / After or swipe the card.</p>
         </div>
@@ -514,10 +518,10 @@ function Tuesday({ section }: { section?: Section }) {
             onPointerCancel={() => setDragging(false)}
           >
             <div className="absolute inset-0">
-              <Card items={BEFORE} />
+              <Card items={before} />
             </div>
             <div className="absolute inset-0 z-[1]" style={{ clipPath: `inset(0 0 0 ${v}%)` }}>
-              <Card items={AFTER} after />
+              <Card items={after} after />
             </div>
 
             {/* fixed labels so both states stay readable */}
@@ -580,11 +584,12 @@ function Tuesday({ section }: { section?: Section }) {
 
 /* ---------------- STORIES ---------------- */
 function Stories({ section }: { section?: Section }) {
-  const notes = [
+  const defaultNotes = [
     { q: "I used to spend Sundays on admin. Now I spend them with my kids. That's the whole review.", w: "Maya", b: "Pilates studio" },
     { q: "Customers think I hired three people. I didn't. I just stopped doing everything by hand.", w: "Tomás", b: "Family bakery" },
     { q: "They explained everything like a friend would. I never once felt stupid. Rare.", w: "Priya", b: "Interior design" },
   ];
+  const notes = Array.isArray(section?.content?.testimonials) ? section.content.testimonials as typeof defaultNotes : defaultNotes;
   return (
     <section id="stories" className="py-24 md:py-32 bg-shell/60">
       <div className="mx-auto max-w-6xl px-5 md:px-8">

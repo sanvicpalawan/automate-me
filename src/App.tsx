@@ -673,7 +673,7 @@ function Postcard() {
           intro="Three short steps, about forty seconds. Tap what fits — you only type what we truly need."
         />
 
-        <div className="reveal mt-12 bg-sand rounded-md shadow-[0_30px_60px_-24px_rgba(0,0,0,.5)] overflow-hidden">
+        <div className="reveal mt-8 md:mt-12 bg-sand rounded-lg md:rounded-md border border-ink/15 shadow-[0_24px_45px_-24px_rgba(0,0,0,.45)] overflow-hidden postcard-paper">
           {sent ? (
             <div className="text-center px-6 py-16 md:py-20 step-in">
               <Turtle className="w-32 mx-auto" />
@@ -688,10 +688,10 @@ function Postcard() {
           ) : (
             <>
               {/* card header */}
-              <div className="flex flex-wrap items-start justify-between gap-4 border-b border-ink/15 px-6 py-5 md:px-10">
+              <div className="flex items-start justify-between gap-3 border-b border-dashed border-ink/20 px-4 sm:px-6 py-4 md:px-10 md:py-5">
                 <div>
-                  <div className="font-brand text-[9px] tracking-[0.35em] uppercase text-ink/45">To · Palawan Collective</div>
-                  <div className="mt-4 flex items-center gap-2" role="group" aria-label={`Step ${step + 1} of 3`}>
+                  <div className="font-brand text-[8px] sm:text-[9px] tracking-[0.15em] sm:tracking-[0.35em] uppercase text-ink/45">To · Palawan Collective</div>
+                  <div className="mt-3 sm:mt-4 flex items-center gap-2" role="group" aria-label={`Step ${step + 1} of 3`}>
                     {[0, 1, 2].map((i) => (
                       <span
                         key={i}
@@ -705,20 +705,20 @@ function Postcard() {
                     </span>
                   </div>
                 </div>
-                <div className="shrink-0 w-20 h-24 md:w-24 md:h-28 border border-dotted border-coral p-1.5 bg-foam grid place-items-center -rotate-2">
+                <div className="shrink-0 w-14 h-[70px] sm:w-20 sm:h-24 md:w-24 md:h-28 border border-dotted border-coral p-1 bg-foam grid place-items-center -rotate-2">
                   <div className="text-center">
-                    <Turtle className="w-11 md:w-14 mx-auto" swim={false} />
-                    <div className="font-brand text-[5px] md:text-[6px] tracking-[0.28em] mt-1">PALAWAN · 2026</div>
+                    <Turtle className="w-8 sm:w-11 md:w-14 mx-auto" swim={false} />
+                    <div className="font-brand text-[4px] sm:text-[5px] md:text-[6px] tracking-[0.08em] sm:tracking-[0.28em] mt-1">PALAWAN · 2026</div>
                   </div>
                 </div>
               </div>
 
-              <div className="px-6 py-7 md:px-10 md:py-9 min-h-[420px] flex flex-col">
+              <div className="px-4 sm:px-6 py-5 sm:py-7 md:px-10 md:py-9 md:min-h-[420px] flex flex-col">
                 {step === 0 && (
                   <div className="step-in">
                     <h3 className="font-serif font-light text-3xl md:text-4xl">What's on your shoulders?</h3>
                     <p className="mt-2 text-sm text-ink/55">Pick as many as you like. No wrong answers.</p>
-                    <div className="mt-5 flex flex-wrap gap-2">
+                    <div className="mt-5 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                       {HANDOFFS.map((h) => {
                         const on = picks.includes(h);
                         return (
@@ -727,13 +727,13 @@ function Postcard() {
                             type="button"
                             onClick={() => toggle(h)}
                             aria-pressed={on}
-                            className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
+                            className={`inline-flex min-w-0 min-h-12 items-center gap-2 rounded-lg sm:rounded-full border px-2.5 sm:px-4 py-2 text-[12px] sm:text-sm leading-tight text-left transition ${
                               on
                                 ? "bg-ink text-sand border-ink"
                                 : "border-ink/25 text-ink/75 hover:border-ink/60 hover:bg-ink/[0.04]"
                             }`}
                           >
-                            <span aria-hidden className={`grid place-items-center w-4 h-4 rounded-full border text-[9px] ${on ? "border-sand/60 bg-coral text-ink" : "border-ink/30 text-transparent"}`}>
+                            <span aria-hidden className={`grid shrink-0 place-items-center w-4 h-4 rounded-full border text-[9px] ${on ? "border-sand/60 bg-coral text-ink" : "border-ink/30 text-transparent"}`}>
                               ✓
                             </span>
                             {h}
@@ -744,14 +744,14 @@ function Postcard() {
 
                     <div className="mt-7">
                       <span className={label}>Roughly how much time does it eat?</span>
-                      <div className="mt-2.5 flex flex-wrap gap-2">
+                      <div className="mt-2.5 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                         {LOADS.map((l) => (
                           <button
                             key={l}
                             type="button"
                             onClick={() => setLoad(l === load ? "" : l)}
                             aria-pressed={load === l}
-                            className={`rounded-full px-4 py-1.5 text-sm border transition ${
+                            className={`rounded-lg sm:rounded-full px-2 sm:px-4 py-2 text-xs sm:text-sm min-h-11 border transition ${
                               load === l ? "bg-lagoon text-sand border-lagoon" : "border-ink/20 text-ink/70 hover:border-ink/50"
                             }`}
                           >
@@ -769,7 +769,7 @@ function Postcard() {
                         id="note"
                         value={note}
                         onChange={(e) => setNote(e.target.value)}
-                        rows={3}
+                        rows={2}
                         placeholder="A sentence in your own words is plenty — e.g. “I run a dental clinic and spend hours confirming appointments by phone.”"
                         className="mt-1 w-full bg-transparent font-hand text-xl leading-[1.85rem] outline-none resize-none placeholder:text-ink/25 placeholder:font-sans placeholder:text-sm placeholder:leading-relaxed"
                         style={{
@@ -882,7 +882,7 @@ function Postcard() {
                 )}
 
                 {/* controls */}
-                <div className="mt-auto pt-7 flex flex-wrap items-center gap-4">
+                <div className="mt-auto pt-6 flex flex-wrap items-center gap-x-4 gap-y-3">
                   {step > 0 && (
                     <button type="button" onClick={back} className="text-sm text-ink/55 hover:text-ink underline underline-offset-4">
                       back
@@ -892,9 +892,9 @@ function Postcard() {
                     <button
                       type="button"
                       onClick={next}
-                      className="group inline-flex items-center gap-3 bg-ink text-sand rounded-full pl-6 pr-1.5 py-1.5 hover:bg-lagoon transition"
+                      className="group inline-flex max-w-full items-center justify-between gap-3 bg-ink text-sand rounded-full pl-4 sm:pl-6 pr-1.5 py-1.5 hover:bg-lagoon transition"
                     >
-                      <span className="text-base">{step === 0 ? "Next: how to reach you" : "Review the postcard"}</span>
+                      <span className="text-sm sm:text-base leading-tight">{step === 0 ? "Next: how to reach you" : "Review the postcard"}</span>
                       <span className="w-9 h-9 rounded-full bg-coral text-ink grid place-items-center">→</span>
                     </button>
                   ) : (
@@ -908,7 +908,7 @@ function Postcard() {
                       <span className="w-9 h-9 rounded-full bg-coral text-ink grid place-items-center">→</span>
                     </button>
                   )}
-                  <span className="font-hand text-lg text-ink/40">no commitment, ever</span>
+                  <span className="font-hand text-base sm:text-lg text-ink/40">no commitment, ever</span>
                 </div>
               </div>
             </>
@@ -964,28 +964,18 @@ function Footer({
   contact: string;
 }) {
   return (
-    <footer className="pt-20 pb-8">
+    <footer className="pt-14 md:pt-20 pb-8">
       <div className="mx-auto max-w-6xl px-5 md:px-8">
-        <div className="flex justify-center">
+        <div className="mx-auto w-full max-w-[300px] sm:max-w-[390px] md:max-w-none flex justify-center [&_svg]:max-w-full">
           <Logo size="lg" swim />
         </div>
-        <p className="text-center font-hand text-2xl text-lagoon mt-8">{tagline}</p>
-        <div className="mt-10 md:mt-14 flex flex-col lg:flex-row justify-between gap-5 text-xs text-ink/50 border-t border-ink/15 pt-5">
-          <span>{copyright}</span>
-          <div className="flex flex-wrap gap-x-5 gap-y-3">
-            <a href={`mailto:${contact}`} className="hover:text-ink">
-              {contact}
-            </a>
-            <a href="#" className="hover:text-ink">
-              Instagram
-            </a>
-            <a href="#" className="hover:text-ink">
-              LinkedIn
-            </a>
-            <a href="#/admin" className="hover:text-ink font-medium text-lagoon">
-              Admin
-            </a>
-          </div>
+        <p className="text-center font-hand text-xl sm:text-2xl text-lagoon mt-5 md:mt-8">{tagline}</p>
+        <div className="mt-12 md:mt-14 border-t border-ink/15 pt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+          <p className="text-xs text-ink/50 text-center md:text-left">{copyright}</p>
+          <nav aria-label="Footer links" className="flex flex-wrap justify-center md:justify-end items-center gap-x-6 gap-y-3 text-xs sm:text-sm">
+            <a href={`mailto:${contact}`} className="text-ink/75 underline underline-offset-4 decoration-ink/25 hover:text-lagoon break-all">{contact}</a>
+            <a href="#/admin" className="text-lagoon hover:text-ink">Admin</a>
+          </nav>
         </div>
       </div>
     </footer>

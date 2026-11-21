@@ -616,6 +616,35 @@ function Stories() {
   );
 }
 
+
+/* A tiny illustrated postage stamp with actual perforated edges and printed ink. */
+function PostageStamp() {
+  const ticks = Array.from({ length: 11 }, (_, i) => 10 + i * 10);
+  const sideTicks = Array.from({ length: 14 }, (_, i) => 10 + i * 10);
+  return (
+    <div className="postage-stamp relative shrink-0 w-[84px] h-[108px] sm:w-[100px] sm:h-[128px] rotate-[-5deg]" aria-label="Decorative Palawan postage stamp">
+      <svg className="absolute inset-0 w-full h-full drop-shadow-[0_4px_3px_rgba(20,20,20,.15)]" viewBox="0 0 120 150" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <mask id="palawan-postage-edge">
+            <rect width="120" height="150" fill="white" />
+            {ticks.map((x) => <g key={x}><circle cx={x} cy="0" r="3.5" fill="black" /><circle cx={x} cy="150" r="3.5" fill="black" /></g>)}
+            {sideTicks.map((y) => <g key={y}><circle cx="0" cy={y} r="3.5" fill="black" /><circle cx="120" cy={y} r="3.5" fill="black" /></g>)}
+          </mask>
+        </defs>
+        <rect x="0" y="0" width="120" height="150" fill="#d6e4d9" mask="url(#palawan-postage-edge)" />
+        <rect x="8" y="8" width="104" height="134" rx="1" fill="none" stroke="#a96356" strokeWidth="1.25" opacity=".8"/>
+        <rect x="12" y="12" width="96" height="126" fill="none" stroke="#a96356" strokeWidth=".45" opacity=".5"/>
+        <path d="M18 42 H102 M18 117 H102" stroke="#a96356" strokeWidth=".6" opacity=".45"/>
+        <text x="19" y="26" fontSize="7.5" fontFamily="sans-serif" fill="#1c5353" letterSpacing="1">PHILIPPINES</text>
+        <text x="102" y="37" textAnchor="end" fontSize="18" fontFamily="serif" fill="#a04c3d">₱26</text>
+        <text x="60" y="126" textAnchor="middle" fontSize="8" fontWeight="bold" fontFamily="sans-serif" fill="#1c5353" letterSpacing="1.15">PALAWAN</text>
+        <text x="60" y="136" textAnchor="middle" fontSize="6.5" fontFamily="sans-serif" fill="#a96356" letterSpacing="2">2026</text>
+      </svg>
+      <Turtle className="absolute left-[23%] top-[34%] w-[54%] h-[42%] opacity-90" swim={false}/>
+    </div>
+  );
+}
+
 /* ---------------- POSTCARD ---------------- */
 const HANDOFFS = [
   "Messages & replies",
@@ -673,7 +702,7 @@ function Postcard() {
           intro="Three short steps, about forty seconds. Tap what fits — you only type what we truly need."
         />
 
-        <div className="reveal mt-8 md:mt-12 bg-sand rounded-lg md:rounded-md border border-ink/15 shadow-[0_24px_45px_-24px_rgba(0,0,0,.45)] overflow-hidden postcard-paper">
+        <div className="reveal mt-8 md:mt-12 bg-sand rounded-lg md:rounded-md border border-ink/15 shadow-[0_24px_45px_-24px_rgba(0,0,0,.45)] overflow-hidden postcard-paper max-w-[780px] mx-auto">
           {sent ? (
             <div className="text-center px-6 py-16 md:py-20 step-in">
               <Turtle className="w-32 mx-auto" />
@@ -688,9 +717,9 @@ function Postcard() {
           ) : (
             <>
               {/* card header */}
-              <div className="flex items-start justify-between gap-3 border-b border-dashed border-ink/20 px-4 sm:px-6 py-4 md:px-10 md:py-5">
+              <div className="relative flex items-start justify-between gap-3 border-b border-dashed border-ink/20 px-4 sm:px-6 py-4 md:px-10 md:py-5">
                 <div>
-                  <div className="font-brand text-[8px] sm:text-[9px] tracking-[0.15em] sm:tracking-[0.35em] uppercase text-ink/45">To · Palawan Collective</div>
+                  <div className="font-brand text-[8px] sm:text-[9px] tracking-[0.15em] sm:tracking-[0.35em] uppercase text-ink/55">To · Palawan Collective</div>
                   <div className="mt-3 sm:mt-4 flex items-center gap-2" role="group" aria-label={`Step ${step + 1} of 3`}>
                     {[0, 1, 2].map((i) => (
                       <span
@@ -705,12 +734,7 @@ function Postcard() {
                     </span>
                   </div>
                 </div>
-                <div className="shrink-0 w-14 h-[70px] sm:w-20 sm:h-24 md:w-24 md:h-28 border border-dotted border-coral p-1 bg-foam grid place-items-center -rotate-2">
-                  <div className="text-center">
-                    <Turtle className="w-8 sm:w-11 md:w-14 mx-auto" swim={false} />
-                    <div className="font-brand text-[4px] sm:text-[5px] md:text-[6px] tracking-[0.08em] sm:tracking-[0.28em] mt-1">PALAWAN · 2026</div>
-                  </div>
-                </div>
+                <PostageStamp />
               </div>
 
               <div className="px-4 sm:px-6 py-5 sm:py-7 md:px-10 md:py-9 md:min-h-[420px] flex flex-col">
@@ -718,7 +742,7 @@ function Postcard() {
                   <div className="step-in">
                     <h3 className="font-serif font-light text-3xl md:text-4xl">What's on your shoulders?</h3>
                     <p className="mt-2 text-sm text-ink/55">Pick as many as you like. No wrong answers.</p>
-                    <div className="mt-5 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                    <div className="mt-5 grid grid-cols-1 min-[375px]:grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                       {HANDOFFS.map((h) => {
                         const on = picks.includes(h);
                         return (
@@ -744,7 +768,7 @@ function Postcard() {
 
                     <div className="mt-7">
                       <span className={label}>Roughly how much time does it eat?</span>
-                      <div className="mt-2.5 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                      <div className="mt-2.5 grid grid-cols-1 min-[375px]:grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                         {LOADS.map((l) => (
                           <button
                             key={l}
@@ -785,7 +809,7 @@ function Postcard() {
                   <div className="step-in">
                     <h3 className="font-serif font-light text-3xl md:text-4xl">How do we write back?</h3>
                     <p className="mt-2 text-sm text-ink/55">Only used to reply to you. No newsletter, no spam, ever.</p>
-                    <div className="mt-6 grid sm:grid-cols-2 gap-x-8 gap-y-5">
+                    <div className="mt-6 grid md:grid-cols-2 gap-x-8 gap-y-5">
                       <label className="block">
                         <span className={label}>Your name *</span>
                         <input

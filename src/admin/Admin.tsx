@@ -159,6 +159,7 @@ function PagePanel(){
             <Text label="Button text" value={active.content.cta?.label||""} onChange={v=>content({cta:{...active.content.cta,label:v}})}/>
             <Text label="Button link" value={active.content.cta?.href||""} onChange={v=>content({cta:{...active.content.cta,href:v}})}/>
           </div><Text label="Small note" value={active.content.note||""} onChange={v=>content({note:v})}/>
+          <Text label="Hero image URL (optional)" hint="Use an uploaded image URL from Media to replace the turtle illustration." value={active.content.image||""} onChange={v=>content({image:v})}/>
         </>:active.key==="footer"?<>
           <Text label="Tagline" value={active.content.tagline||""} onChange={v=>content({tagline:v})}/>
           <Text label="Copyright" value={active.content.copyright||""} onChange={v=>content({copyright:v})}/>

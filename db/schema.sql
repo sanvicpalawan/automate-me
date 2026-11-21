@@ -66,3 +66,19 @@ CREATE TABLE IF NOT EXISTS uploaded_media (
  bytes BYTEA NOT NULL,
  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Durable inbox for postcard inquiries. This is idempotent.
+CREATE TABLE IF NOT EXISTS website_leads (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(120) NOT NULL,
+  business VARCHAR(160) NOT NULL DEFAULT '',
+  email VARCHAR(254) NOT NULL,
+  website VARCHAR(400) NOT NULL DEFAULT '',
+  handoffs JSONB NOT NULL DEFAULT '[]'::jsonb,
+  weekly_load VARCHAR(40) NOT NULL DEFAULT '',
+  note TEXT NOT NULL DEFAULT '',
+  status VARCHAR(20) NOT NULL DEFAULT 'new',
+  email_notified BOOLEAN NOT NULL DEFAULT FALSE,
+  submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS website_leads_received_idx ON website_leads (submitted_at DESC);

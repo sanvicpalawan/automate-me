@@ -39,6 +39,8 @@ export const api = {
   media: () => request("GET", "/api/admin/media"),
   mediaUpload: (payload: any) => request("POST", "/api/admin/media", payload),
   mediaDelete: (id: number) => request("DELETE", `/api/admin/media?id=${id}`),
+  leads: () => request("GET", "/api/admin/leads"),
+  leadStatus: (id: number, status: string) => request("PATCH", "/api/admin/leads", {id,status}),
   faq: () => request("GET", "/api/admin/faq"),
   faqCreate: (payload: any) => request("POST", "/api/admin/faq", payload),
   faqUpdate: (payload: any) => request("PUT", "/api/admin/faq", payload),

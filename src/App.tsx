@@ -959,6 +959,9 @@ function Footer({
             <a href="#" className="hover:text-ink">
               LinkedIn
             </a>
+            <a href="#/admin" className="hover:text-ink font-medium text-lagoon">
+              Admin
+            </a>
           </div>
         </div>
       </div>

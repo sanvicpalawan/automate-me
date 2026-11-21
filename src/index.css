@@ -137,3 +137,35 @@ input[type="range"].tide::-moz-range-thumb {
   0% { transform: scale(1); opacity: .8; }
   100% { transform: scale(1.75); opacity: 0; }
 }
+
+/* Mobile/tablet refinements: retain desktop composition. */
+html { scroll-padding-top: 84px; }
+body { min-width: 320px; }
+#root { min-width: 0; overflow-x: clip; }
+section { scroll-margin-top: 80px; }
+button, a, input, textarea { -webkit-tap-highlight-color: transparent; }
+button, a { touch-action: manipulation; }
+h1, h2, h3 { overflow-wrap: break-word; }
+@media (max-width: 767px) {
+  section#weight, section#how, section#tuesday, section#stories,
+  section#faq, section#hello { padding-top: 64px; padding-bottom: 72px; }
+  section#top > .relative.z-10 { padding-top: 84px; padding-bottom: 64px; }
+  .grain::before { opacity: .045; }
+  #weight button .coco { max-width: 100%; }
+  #weight button { min-width: 0; }
+  #hello input { min-width: 0; }
+  footer { padding-top: 64px; }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  section#top > .relative.z-10 { padding-top: 118px; padding-bottom: 90px; }
+  #weight .grid { min-width: 0; }
+  #stories figure { max-width: 66ch; }
+}
+@media (max-width: 420px) {
+  #hello .font-brand { letter-spacing: .18em; }
+  #hello .rounded-full { max-width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .stamp-ink { opacity: 1 !important; }
+}

@@ -61,7 +61,7 @@ function SectionHead({
 }
 
 /* ---------------- NAV ---------------- */
-function Nav({ links, cta }: { links: { label: string; href: string }[]; cta: { label: string; href: string } }) {
+function Nav({ links, cta, logoSrc }: { links: { label: string; href: string }[]; cta: { label: string; href: string }; logoSrc?: string }) {
   const [solid, setSolid] = useState(false);
   const [open, setOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -86,7 +86,7 @@ function Nav({ links, cta }: { links: { label: string; href: string }[]; cta: { 
           href="#top"
           className={`rounded-full pl-1 pr-2 sm:pl-2 sm:pr-4 py-1.5 transition min-w-0 max-w-[72vw] ${solid ? "bg-sand/95 backdrop-blur border border-ink/10 shadow-sm" : ""}`}
         >
-          <span className="block max-w-full [&_svg]:max-w-full"><Logo size="sm" /></span>
+          {logoSrc ? <img src={logoSrc} alt="Palawan Collective" className="h-10 w-auto max-w-[66vw] object-contain"/> : <span className="block max-w-full [&_svg]:max-w-full"><Logo size="sm" /></span>}
         </a>
         <nav
           className={`hidden md:flex items-center rounded-full p-1 text-sm transition ${solid ? "bg-sand/90 backdrop-blur border border-ink/10" : ""}`}
@@ -138,6 +138,7 @@ function Hero({
   ctaLabel,
   ctaHref,
   note,
+  imageUrl,
 }: {
   kicker: string;
   heading: string;
@@ -145,6 +146,7 @@ function Hero({
   ctaLabel: string;
   ctaHref: string;
   note: string;
+  imageUrl?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [m, setM] = useState({ x: 0, y: 0 });
@@ -164,7 +166,7 @@ function Hero({
         style={{ transform: `translate(${m.x * 30}px, ${m.y * 22}px) rotate(${m.x * 5}deg)` }}
       >
         <div className="drift">
-          <Turtle className="w-full h-auto" rotate={28} />
+          {imageUrl ? <img src={imageUrl} alt="" className="w-full h-auto object-contain" /> : <Turtle className="w-full h-auto" rotate={28} />}
         </div>
       </div>
 
@@ -172,7 +174,7 @@ function Hero({
         {/* Small editorial accent, not a tall empty illustration row. */}
         <div className="lg:hidden pointer-events-none absolute right-4 top-[90px] sm:top-[105px] w-[105px] sm:w-[155px] md:w-[185px] aspect-square" aria-hidden>
           <div className="absolute right-0 top-[12%] w-[74%] aspect-square rounded-full bg-coral" />
-          <div className="drift relative w-full"><Turtle className="w-full h-auto" rotate={28} /></div>
+          <div className="drift relative w-full">{imageUrl ? <img src={imageUrl} alt="" className="w-full h-auto object-contain" /> : <Turtle className="w-full h-auto" rotate={28} />}</div>
         </div>
         <p className="rise relative font-hand text-[22px] sm:text-2xl text-lagoon -rotate-1 max-w-[67%] sm:max-w-none">{kicker}</p>
         <h1
@@ -988,16 +990,18 @@ function Footer({
   tagline,
   copyright,
   contact,
+  logoSrc,
 }: {
   tagline: string;
   copyright: string;
   contact: string;
+  logoSrc?: string;
 }) {
   return (
     <footer className="pt-14 md:pt-20 pb-8">
       <div className="mx-auto max-w-6xl px-5 md:px-8">
         <div className="mx-auto w-full max-w-[300px] sm:max-w-[390px] md:max-w-none flex justify-center [&_svg]:max-w-full">
-          <Logo size="lg" swim />
+          {logoSrc ? <img src={logoSrc} alt="Palawan Collective" className="max-h-56 w-full object-contain"/> : <Logo size="lg" swim />}
         </div>
         <p className="text-center font-hand text-xl sm:text-2xl text-lagoon mt-5 md:mt-8">{tagline}</p>
         <div className="mt-12 md:mt-14 border-t border-ink/15 pt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
@@ -1061,6 +1065,7 @@ function SiteApp() {
     key, title:null, subtitle:null, body:null, content:{}, sortOrder:10+i*10
   }))].sort((a,b)=>a.sortOrder-b.sortOrder);
   const showSection = (s:Section) => !s.content?.hidden;
+  const logoSrc = /^\/api\/media\?id=\d+$/.test(site?.theme?.logoSvg || "") ? site!.theme!.logoSvg! : undefined;
   const publicLinks = headerContent?.links ?? HEADER_DEFAULT.links;
   const portfolioEntry = sortedSections.find(s=>s.content?.kind==="portfolio" && showSection(s));
   const navLinks = portfolioEntry && !publicLinks.some(l=>l.href==="#"+portfolioEntry.key)
@@ -1068,7 +1073,7 @@ function SiteApp() {
 
   return (
     <div className="grain">
-      <Nav links={navLinks} cta={headerContent?.cta ?? HEADER_DEFAULT.cta} />
+      <Nav links={navLinks} cta={headerContent?.cta ?? HEADER_DEFAULT.cta} logoSrc={logoSrc}/>
       <Hero
         kicker={heroContent?.kicker ?? HERO_DEFAULT.kicker}
         heading={heroContent?.heading ?? HERO_DEFAULT.heading}
@@ -1076,6 +1081,7 @@ function SiteApp() {
         ctaLabel={heroContent?.cta?.label ?? HERO_DEFAULT.cta.label}
         ctaHref={heroContent?.cta?.href ?? HERO_DEFAULT.cta.href}
         note={heroContent?.note ?? HERO_DEFAULT.note}
+        imageUrl={/^\/api\/media\?id=\d+$/.test((heroContent as any)?.image||"") ? (heroContent as any).image : undefined}
       />
       <StampBand />
       {sortedSections.filter(showSection).map(section => {
@@ -1093,6 +1099,7 @@ function SiteApp() {
         tagline={footerContent?.tagline ?? FOOTER_DEFAULT.tagline}
         copyright={footerContent?.copyright ?? FOOTER_DEFAULT.copyright}
         contact={footerContent?.contact === "hello@palawancollective.com" ? "agent@merqato.digital" : footerContent?.contact ?? FOOTER_DEFAULT.contact}
+        logoSrc={logoSrc}
       />
     </div>
   );

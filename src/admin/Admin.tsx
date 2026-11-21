@@ -4,7 +4,7 @@ import { api } from "./api";
 import { THEME_DEFAULT } from "../content";
 import type { FaqItem, Section, Theme } from "../content";
 
-type View = "Pages" | "Brand" | "Media" | "FAQ";
+type View = "Inbox" | "Pages" | "Brand" | "Media" | "FAQ";
 type Editable = Section & { content: Record<string, any> };
 type Media = { id: number; filename: string; alt: string; size: number; url: string };
 const essentials = ["header", "hero", "footer"];
@@ -208,9 +208,85 @@ function FaqPanel(){
     {items.map(item=><div key={item.id} className={card+" p-5 flex justify-between items-start gap-4"}><div><h3 className="font-medium">{item.question}</h3><p className="mt-1 text-sm text-[#687f75] whitespace-pre-wrap">{item.answer}</p></div><div className="flex gap-2 shrink-0"><button className={outline+" !px-3 !py-2 !text-xs"} onClick={()=>{setEdit(item.id);setDraft({question:item.question,answer:item.answer});}}>Edit</button><button className="text-xs text-red-700" onClick={async()=>{if(!confirm("Delete FAQ?"))return;const x=await api.faqDelete({id:item.id});setMsg(x.ok?"Deleted":x.error||"Failed");if(x.ok)void refresh();}}>Delete</button></div></div>)}
   </div>;
 }
+
+type Lead = {
+  id:number; name:string; business:string; email:string; website:string;
+  handoffs:string[]; weeklyLoad:string; note:string; status:"new"|"contacted"|"closed";
+  emailNotified:boolean; submittedAt:string;
+};
+function InboxPanel(){
+  const [leads,setLeads]=useState<Lead[]>([]);
+  const [loading,setLoading]=useState(true);
+  const [message,setMessage]=useState("");
+  const [filter,setFilter]=useState<"all"|"new"|"contacted"|"closed">("all");
+  async function refresh(){
+    setLoading(true);
+    const response=await api.leads();
+    setLoading(false);
+    if(!response.ok){setMessage(response.error||"Could not load inbox");return;}
+    setMessage("");
+    setLeads(response.json?.leads||[]);
+  }
+  useEffect(()=>{void refresh();},[]);
+  async function update(id:number,status:Lead["status"]){
+    const response=await api.leadStatus(id,status);
+    if(response.ok) setLeads(items=>items.map(item=>item.id===id?{...item,status}:item));
+    else setMessage(response.error||"Could not update status");
+  }
+  const visible=filter==="all"?leads:leads.filter(l=>l.status===filter);
+  const newCount=leads.filter(l=>l.status==="new").length;
+  return <div className="space-y-5">
+    <section className={card+" p-5 sm:p-7"}>
+      <div className="flex flex-wrap gap-4 items-start justify-between">
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-[.2em] text-[#739487]">Website inquiries</div>
+          <h2 className="mt-2 font-serif text-2xl sm:text-3xl">Your lead inbox</h2>
+          <p className="mt-2 text-sm text-[#688077]">Every successfully submitted postcard is saved here. Reply directly using the visitor’s email address.</p>
+        </div>
+        <button className={outline} onClick={()=>void refresh()}>Refresh inbox</button>
+      </div>
+      <div className="mt-5 flex flex-wrap gap-2">
+        {(["all","new","contacted","closed"] as const).map(f=><button key={f} type="button" onClick={()=>setFilter(f)}
+          className={`rounded-full border px-4 py-2 text-sm capitalize ${filter===f?"bg-[#15554c] border-[#15554c] text-white":"border-[#d9e4dc] text-[#54736a]"}`}>
+          {f}{f==="new"?" ("+newCount+")":""}
+        </button>)}
+      </div>
+      {message&&<p role="alert" className="mt-4 text-sm text-[#9c4b37]">{message}</p>}
+    </section>
+    {loading?<p className="text-sm text-[#637e73]">Loading inquiries…</p>:visible.length===0?
+      <div className={card+" p-10 text-center"}><p className="font-serif text-2xl">No inquiries in this view.</p><p className="mt-2 text-sm text-[#72887d]">New postcard submissions will appear here.</p></div>:
+      visible.map(lead=><article key={lead.id} className={card+" p-5 sm:p-7"}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[10px] tracking-wider uppercase text-[#7a9286]">Inquiry #{lead.id}</span>
+              <span className={`rounded-full px-2.5 py-1 text-xs capitalize ${lead.status==="new"?"bg-[#ecf5e8] text-[#336c4c]":lead.status==="contacted"?"bg-[#eaf0f5] text-[#3c6280]":"bg-[#eee] text-[#666]"}`}>{lead.status}</span>
+              {lead.emailNotified&&<span className="text-xs text-[#6a8178]">Email alert sent</span>}
+            </div>
+            <h3 className="mt-2 font-serif text-2xl">{lead.name}</h3>
+            {lead.business&&<p className="text-sm text-[#647f73]">{lead.business}</p>}
+          </div>
+          <time className="text-xs text-[#829489]">{new Date(lead.submittedAt).toLocaleString()}</time>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 text-sm">
+          <p><span className="text-[#819389]">Email: </span><a href={`mailto:${lead.email}`} className="text-[#175e56] underline break-all">{lead.email}</a></p>
+          {lead.website&&<p><span className="text-[#819389]">Website: </span><span className="break-all">{lead.website}</span></p>}
+          {lead.weeklyLoad&&<p><span className="text-[#819389]">Weekly workload: </span>{lead.weeklyLoad}</p>}
+        </div>
+        {!!lead.handoffs?.length&&<div className="mt-4 flex flex-wrap gap-2">{lead.handoffs.map(item=><span key={item} className="rounded-full bg-[#edf3ef] px-3 py-1.5 text-xs text-[#3c6255]">{item}</span>)}</div>}
+        {lead.note&&<p className="mt-4 whitespace-pre-wrap rounded-xl bg-[#f6f8f4] p-4 text-sm leading-relaxed text-[#3d5950]">{lead.note}</p>}
+        <div className="mt-5 flex flex-wrap gap-2 border-t border-[#e5ebe4] pt-4">
+          <a className={btn} href={`mailto:${lead.email}?subject=${encodeURIComponent("Re: Your Palawan Collective inquiry")}`}>Reply via email</a>
+          <select className={input+" !w-auto"} aria-label={`Status for ${lead.name}`} value={lead.status} onChange={e=>void update(lead.id,e.target.value as Lead["status"])}>
+            <option value="new">New</option><option value="contacted">Contacted</option><option value="closed">Closed</option>
+          </select>
+        </div>
+      </article>)}
+  </div>;
+}
 export default function Admin(){
   const [auth,setAuth]=useState<"checking"|"in"|"out">("checking");
-  const [tab,setTab]=useState<View>("Pages");
+  const [tab,setTab]=useState<View>("Inbox");
   useEffect(()=>{api.check().then(r=>setAuth(r.ok?"in":"out"));},[]);
   if(auth==="checking")return <div className="min-h-screen bg-[#f6f8f4] grid place-items-center text-[#5c766b]">Opening Site Studio…</div>;
   if(auth==="out")return <Login onSuccess={()=>setAuth("in")}/>;
@@ -222,11 +298,11 @@ export default function Admin(){
       </div>
     </header>
     <main className="max-w-7xl mx-auto px-4 sm:px-7 pb-14">
-      <div className="pt-7 pb-6"><p className="text-sm text-[#789087]">Website management</p><h2 className="mt-1 font-serif text-3xl sm:text-4xl">Make it yours.</h2><p className="mt-2 text-sm text-[#73847b]">Manage content, portfolio, images, and brand identity. Every saved change is published to your live site.</p></div>
+      <div className="pt-7 pb-6"><p className="text-sm text-[#789087]">Website management</p><h2 className="mt-1 font-serif text-3xl sm:text-4xl">Make it yours.</h2><p className="mt-2 text-sm text-[#73847b]">Manage inquiries, content, portfolio, images, and your brand identity.</p></div>
       <nav aria-label="Admin sections" className="flex gap-2 overflow-x-auto pb-5">
-        {(["Pages","Brand","Media","FAQ"] as View[]).map(t=><button key={t} className={`shrink-0 rounded-xl px-5 py-3 text-sm font-semibold transition ${tab===t?"bg-[#164f49] text-white":"bg-white border border-[#e0e8e0] text-[#5f756b] hover:border-[#87b1a0]"}`} onClick={()=>setTab(t)}>{t}</button>)}
+        {(["Inbox","Pages","Brand","Media","FAQ"] as View[]).map(t=><button key={t} className={`shrink-0 rounded-xl px-5 py-3 text-sm font-semibold transition ${tab===t?"bg-[#164f49] text-white":"bg-white border border-[#e0e8e0] text-[#5f756b] hover:border-[#87b1a0]"}`} onClick={()=>setTab(t)}>{t}</button>)}
       </nav>
-      {tab==="Pages"&&<PagePanel/>}{tab==="Brand"&&<BrandPanel/>}{tab==="Media"&&<MediaPanel/>}{tab==="FAQ"&&<FaqPanel/>}
+      {tab==="Inbox"&&<InboxPanel/>}{tab==="Pages"&&<PagePanel/>}{tab==="Brand"&&<BrandPanel/>}{tab==="Media"&&<MediaPanel/>}{tab==="FAQ"&&<FaqPanel/>}
     </main>
   </div>;
 }

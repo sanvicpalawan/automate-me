@@ -104,13 +104,13 @@ function Nav({ links, cta }: { links: { label: string; href: string }[]; cta: { 
         </button>
       </div>
       {open && (
-        <div className="md:hidden mx-4 mt-1 rounded-2xl bg-sand/95 backdrop-blur border border-ink/10 shadow-lg p-2">
+        <div className="md:hidden mx-4 mt-1 rounded-2xl bg-sand/98 backdrop-blur-xl border border-ink/10 shadow-lg p-2 max-h-[calc(100dvh-90px)] overflow-y-auto">
           {[...links, cta].map((l) => (
             <a
               key={l.href}
               href={l.href}
               onClick={() => setOpen(false)}
-              className="block px-4 py-3 rounded-xl text-ink/80 hover:bg-ink hover:text-sand transition"
+              className="block px-4 py-3.5 rounded-xl text-ink/80 hover:bg-ink hover:text-sand transition"
             >
               {l.label}
             </a>
@@ -161,23 +161,23 @@ function Hero({
 
       <div className="relative z-10 mx-auto max-w-6xl px-5 md:px-8 pt-28 md:pt-44 pb-20 md:pb-36">
         {/* mobile turtle, in flow so it never sits under the words */}
-        <div className="lg:hidden relative h-[44vw] max-h-[230px] mb-3">
+        <div className="lg:hidden relative h-[130px] sm:h-[190px] md:h-[220px] mt-3 mb-2">
           <div className="absolute right-1 top-3 w-24 h-24 rounded-full bg-coral" />
-          <div className="drift absolute right-0 top-0 w-[44vw] max-w-[210px]">
+          <div className="drift absolute right-0 top-0 w-[155px] sm:w-[200px] md:w-[230px]">
             <Turtle className="w-full h-auto" rotate={28} />
           </div>
         </div>
         <p className="rise font-hand text-2xl text-lagoon -rotate-1">{kicker}</p>
         <h1
-          className="rise font-serif font-light text-[11vw] md:text-7xl leading-[1.02] tracking-tight mt-4 max-w-[15ch]"
+          className="rise font-serif font-light text-[clamp(2.8rem,10.5vw,5rem)] md:text-7xl leading-[1.04] tracking-tight mt-3 sm:mt-4 max-w-[15ch]"
           style={{ animationDelay: ".12s" }}
         >
           {heading}
         </h1>
-        <p className="rise mt-7 max-w-md text-lg leading-relaxed text-ink/70" style={{ animationDelay: ".24s" }}>
+        <p className="rise mt-5 sm:mt-7 max-w-md text-base sm:text-lg leading-relaxed text-ink/70" style={{ animationDelay: ".24s" }}>
           {subheading}
         </p>
-        <div className="rise mt-9 flex flex-wrap items-center gap-6" style={{ animationDelay: ".36s" }}>
+        <div className="rise mt-7 sm:mt-9 flex flex-wrap items-center gap-3 sm:gap-6" style={{ animationDelay: ".36s" }}>
           <a href={ctaHref} className="inline-flex items-center gap-3 bg-ink text-sand rounded-full pl-6 pr-1.5 py-1.5 hover:bg-lagoon transition">
             <span className="text-base">{ctaLabel}</span>
             <span className="w-9 h-9 rounded-full bg-coral text-ink grid place-items-center">↓</span>
@@ -227,8 +227,8 @@ function Weight() {
           intro="Some jobs are just hard shells: plenty of effort, not much inside. Tap one to see what happens when it stops being your problem."
         />
 
-        <div className="mt-12 md:mt-14 grid md:grid-cols-[280px_1fr] lg:grid-cols-[300px_1fr] gap-10 md:gap-12 lg:gap-16 items-start">
-          <div className="md:sticky md:top-24 w-full">
+        <div className="mt-12 md:mt-14 grid lg:grid-cols-[300px_1fr] gap-10 md:gap-12 lg:gap-16 items-start">
+          <div className="lg:sticky lg:top-24 w-full">
             <div className="rounded-2xl bg-ink text-sand p-6 md:p-7">
               <div className="font-brand text-[9px] tracking-[0.35em] uppercase text-sand/45">Time handed back</div>
               <div className="flex items-end gap-3 mt-3">
@@ -258,7 +258,7 @@ function Weight() {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-5 sm:gap-x-8 gap-y-8 md:gap-y-10">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 sm:gap-x-8 gap-y-6 md:gap-y-10">
             {CHORES.map((c, i) => {
               const isGone = gone.includes(i);
               return (
@@ -439,7 +439,7 @@ function Tuesday() {
   const Card = ({ items, after }: { items: string[][]; after?: boolean }) => (
     <div className={`p-6 md:p-10 h-full ${after ? "bg-foam" : "bg-[#ded6c6]"}`}>
       <div className="flex items-center justify-between">
-        <span className="font-brand text-[9px] tracking-[0.35em] uppercase pr-16" aria-hidden>{after ? "After Palawan" : "Before"}</span>
+        <span className="font-brand text-[9px] tracking-[0.2em] sm:tracking-[0.35em] uppercase pr-2" aria-hidden>{after ? "After Palawan" : "Before"}</span>
         <span className="font-hand text-2xl">{after ? "ahh." : "ugh."}</span>
       </div>
       <ul className="mt-5 space-y-3">
@@ -463,7 +463,7 @@ function Tuesday() {
         />
 
         {/* mobile & tablet: stacked, no drag */}
-        <div className="lg:hidden mt-10 grid gap-5 sm:grid-cols-2">
+        <div className="lg:hidden mt-10 grid gap-5 md:grid-cols-2">
           <div className="rounded-2xl overflow-hidden border border-ink/15">
             <Card items={BEFORE} />
           </div>
@@ -565,7 +565,7 @@ function Stories() {
     <section id="stories" className="py-24 md:py-32 bg-shell/60">
       <div className="mx-auto max-w-6xl px-5 md:px-8">
         <SectionHead label="04 — Stories" title="From people who breathe easier now." />
-        <div className="mt-14 grid md:grid-cols-3 gap-x-12 gap-y-10">
+        <div className="mt-10 md:mt-14 grid lg:grid-cols-3 gap-x-12 gap-y-10">
           {notes.map((n, i) => (
             <figure key={i} className="reveal border-t border-ink/25 pt-6" style={{ transitionDelay: `${i * 110}ms` }}>
               <blockquote className="font-serif font-light italic text-xl leading-snug">{n.q}</blockquote>
@@ -575,7 +575,7 @@ function Stories() {
             </figure>
           ))}
         </div>
-        <div className="reveal mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 border-t border-ink/20 pt-8">
+        <div className="reveal mt-12 md:mt-16 grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 border-t border-ink/20 pt-8">
           {[
             ["12 hrs", "handed back, weekly"],
             ["3 weeks", "first coffee to calm"],
@@ -947,9 +947,9 @@ function Footer({
           <Logo size="lg" swim />
         </div>
         <p className="text-center font-hand text-2xl text-lagoon mt-8">{tagline}</p>
-        <div className="mt-14 flex flex-col md:flex-row justify-between gap-3 text-xs text-ink/50 border-t border-ink/15 pt-5">
+        <div className="mt-10 md:mt-14 flex flex-col lg:flex-row justify-between gap-5 text-xs text-ink/50 border-t border-ink/15 pt-5">
           <span>{copyright}</span>
-          <div className="flex gap-5">
+          <div className="flex flex-wrap gap-x-5 gap-y-3">
             <a href={`mailto:${contact}`} className="hover:text-ink">
               {contact}
             </a>

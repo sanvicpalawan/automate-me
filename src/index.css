@@ -183,3 +183,33 @@ h1, h2, h3 { overflow-wrap: break-word; }
   background: repeating-linear-gradient(135deg, #e8e1d3 0 12px, #e5c6b9 12px 16px, #e8e1d3 16px 28px, #bbd4cb 28px 32px);
 }
 @media (min-width: 768px) { .postcard-paper::before { display: none; } }
+
+/* Fine responsive typography and paper object treatment. */
+.postage-stamp { transform-origin: center center; filter: saturate(.88); }
+.postage-stamp::after {
+  content: "";
+  position: absolute;
+  inset: 10% 8% auto auto;
+  width: 42%; aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid rgba(24,64,64,.16);
+  pointer-events: none;
+  transform: rotate(-15deg) translate(32%, -26%);
+}
+@media (max-width: 374px) {
+  #hello .postcard-paper { margin-inline: -4px; }
+  #hello .postcard-paper button { overflow-wrap: anywhere; }
+  #hello .postage-stamp { width: 74px; height: 95px; }
+}
+@media (min-width: 375px) and (max-width: 639px) {
+  #hello .postcard-paper button { overflow-wrap: anywhere; }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  #hello .postcard-paper { max-width: 780px; }
+  #stories figure { max-width: none; }
+}
+@media (max-width: 767px) {
+  #hello .postage-stamp { margin-top: -2px; }
+  #hello .postcard-paper { box-shadow: 0 20px 40px -28px rgba(0,0,0,.55); }
+  #hello .postcard-paper .font-serif { overflow-wrap: break-word; }
+}

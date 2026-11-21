@@ -16,6 +16,7 @@ import {
   type HeroContent,
   type FooterContent,
   type FaqItem,
+  type Section,
 } from "./content";
 
 function useReveal() {
@@ -208,7 +209,7 @@ const CHORES: { t: string; h: number; skin: number; seed: number }[] = [
   { t: "Reconciling the receipts", h: 2, skin: 1, seed: 61 },
 ];
 
-function Weight() {
+function Weight({ section }: { section?: Section }) {
   const [gone, setGone] = useState<number[]>([]);
   const hours = CHORES.reduce((s, c, i) => (gone.includes(i) ? s + c.h : s), 0);
   const total = CHORES.reduce((s, c) => s + c.h, 0);
@@ -229,8 +230,8 @@ function Weight() {
       <div className="mx-auto max-w-6xl px-5 md:px-8">
         <SectionHead
           label="01 — The weight"
-          title="Crack open the coconuts on your list."
-          intro="Some jobs are just hard shells: plenty of effort, not much inside. Tap one to see what happens when it stops being your problem."
+          title={section?.title || "Crack open the coconuts on your list."}
+          intro={section?.body || "Some jobs are just hard shells: plenty of effort, not much inside. Tap one to see what happens when it stops being your problem."}
         />
 
         <div className="mt-12 md:mt-14 grid lg:grid-cols-[300px_1fr] gap-10 md:gap-12 lg:gap-16 items-start">
@@ -317,7 +318,7 @@ const STEPS = [
   },
 ];
 
-function How() {
+function How({ section }: { section?: Section }) {
   const [active, setActive] = useState(0);
   const rows = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -340,8 +341,8 @@ function How() {
         <SectionHead
           tone="dark"
           label="02 — How it works"
-          title="Three slow steps. That is the whole thing."
-          intro="No forty-page proposal. No technical language. Three stages that feel like a conversation."
+          title={section?.title || "Three slow steps. That is the whole thing."}
+          intro={section?.body || "No forty-page proposal. No technical language. Three stages that feel like a conversation."}
         />
 
         <div className="relative mt-14 md:mt-20">
@@ -416,7 +417,7 @@ const AFTER: string[][] = [
   ["18:30", "Sunset swim"],
 ];
 
-function Tuesday() {
+function Tuesday({ section }: { section?: Section }) {
   const [v, setV] = useState(50);
   const [auto, setAuto] = useState(true);
   const [dragging, setDragging] = useState(false);
@@ -466,8 +467,8 @@ function Tuesday() {
       <div className="mx-auto max-w-6xl px-5 md:px-8">
         <SectionHead
           label="03 — A Tuesday"
-          title="Same business. Different day."
-          intro="It moves on its own — or drag the sun yourself to compare a normal Tuesday."
+          title={section?.title || "Same business. Different day."}
+          intro={section?.body || "It moves on its own — or drag the sun yourself to compare a normal Tuesday."}
         />
 
         {/* Mobile comparison: switch or swipe a single full-width card. */}
@@ -578,7 +579,7 @@ function Tuesday() {
 }
 
 /* ---------------- STORIES ---------------- */
-function Stories() {
+function Stories({ section }: { section?: Section }) {
   const notes = [
     { q: "I used to spend Sundays on admin. Now I spend them with my kids. That's the whole review.", w: "Maya", b: "Pilates studio" },
     { q: "Customers think I hired three people. I didn't. I just stopped doing everything by hand.", w: "Tomás", b: "Family bakery" },
@@ -587,7 +588,7 @@ function Stories() {
   return (
     <section id="stories" className="py-24 md:py-32 bg-shell/60">
       <div className="mx-auto max-w-6xl px-5 md:px-8">
-        <SectionHead label="04 — Stories" title="From people who breathe easier now." />
+        <SectionHead label="04 — Stories" title={section?.title || "From people who breathe easier now."} intro={section?.body || undefined}/>
         <div className="mt-10 md:mt-14 grid lg:grid-cols-3 gap-x-12 gap-y-10">
           {notes.map((n, i) => (
             <figure key={i} className="reveal border-t border-ink/25 pt-6" style={{ transitionDelay: `${i * 110}ms` }}>
@@ -1006,6 +1007,29 @@ function Footer({
   );
 }
 
+/* CMS-controlled section layouts: content, cards, and portfolio. */
+function ManagedSection({ section }: { section: Section }) {
+  const content = section.content || {};
+  const items = Array.isArray(content.items) ? content.items as {title?:string;description?:string;image?:string;href?:string}[] : [];
+  const layout = content.kind || "content";
+  const image = typeof content.image === "string" ? content.image : "";
+  return <section id={section.key} className="py-20 md:py-28">
+    <div className="mx-auto max-w-6xl px-5 md:px-8">
+      <SectionHead label={section.subtitle || (layout === "portfolio" ? "Selected projects" : "What we do")} title={section.title || "Explore"} intro={section.body || undefined}/>
+      {layout === "content" && image && <img src={image} alt={section.title || ""} loading="lazy" className="mt-10 w-full rounded-2xl max-h-[540px] object-cover"/>}
+      {(layout === "cards" || layout === "portfolio") && <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((item, i) => <article key={i} className="overflow-hidden rounded-2xl border border-ink/15 bg-shell/40">
+          {item.image && <img src={item.image} alt={item.title || "Project image"} loading="lazy" className="aspect-[4/3] w-full object-cover"/>}
+          <div className="p-5 sm:p-6"><h3 className="font-serif text-2xl">{item.title || "Untitled"}</h3>
+            {item.description && <p className="mt-3 text-ink/65 text-sm leading-relaxed">{item.description}</p>}
+            {item.href && <a href={item.href} target="_blank" rel="noopener noreferrer" className="mt-5 inline-block border-b border-lagoon pb-1 text-sm font-medium text-lagoon hover:text-ink">View project ↗</a>}
+          </div>
+        </article>)}
+      </div>}
+    </div>
+  </section>;
+}
+
 function SiteApp() {
   const [site, setSite] = useState<SiteContent | null>(null);
   useReveal();
@@ -1026,10 +1050,20 @@ function SiteApp() {
   const heroContent = sectionOf(site, "hero")?.content as HeroContent | undefined;
   const footerContent = sectionOf(site, "footer")?.content as FooterContent | undefined;
   const faqItems: FaqItem[] = (site?.faq as FaqItem[] | undefined) ?? [];
+  const editorSections = (site?.sections || []).filter(s => !["header","hero","footer"].includes(s.key));
+  const builtins = ["weight","how","tuesday","stories"];
+  const sortedSections: Section[] = [...editorSections, ...builtins.filter(k => !editorSections.some(s=>s.key===k)).map((key,i)=>({
+    key, title:null, subtitle:null, body:null, content:{}, sortOrder:10+i*10
+  }))].sort((a,b)=>a.sortOrder-b.sortOrder);
+  const showSection = (s:Section) => !s.content?.hidden;
+  const publicLinks = headerContent?.links ?? HEADER_DEFAULT.links;
+  const portfolioEntry = sortedSections.find(s=>s.content?.kind==="portfolio" && showSection(s));
+  const navLinks = portfolioEntry && !publicLinks.some(l=>l.href==="#"+portfolioEntry.key)
+    ? [...publicLinks, {label:"Portfolio",href:"#"+portfolioEntry.key}] : publicLinks;
 
   return (
     <div className="grain">
-      <Nav links={headerContent?.links ?? HEADER_DEFAULT.links} cta={headerContent?.cta ?? HEADER_DEFAULT.cta} />
+      <Nav links={navLinks} cta={headerContent?.cta ?? HEADER_DEFAULT.cta} />
       <Hero
         kicker={heroContent?.kicker ?? HERO_DEFAULT.kicker}
         heading={heroContent?.heading ?? HERO_DEFAULT.heading}
@@ -1039,16 +1073,21 @@ function SiteApp() {
         note={heroContent?.note ?? HERO_DEFAULT.note}
       />
       <StampBand />
-      <Weight />
-      <How />
-      <Tuesday />
-      <Stories />
+      {sortedSections.filter(showSection).map(section => {
+        switch (section.key) {
+          case "weight": return <Weight key={section.key} section={section}/>;
+          case "how": return <How key={section.key} section={section}/>;
+          case "tuesday": return <Tuesday key={section.key} section={section}/>;
+          case "stories": return <Stories key={section.key} section={section}/>;
+          default: return <ManagedSection key={section.key} section={section}/>;
+        }
+      })}
       <FaqSection items={faqItems} />
       <Postcard />
       <Footer
         tagline={footerContent?.tagline ?? FOOTER_DEFAULT.tagline}
         copyright={footerContent?.copyright ?? FOOTER_DEFAULT.copyright}
-        contact={footerContent?.contact ?? FOOTER_DEFAULT.contact}
+        contact={footerContent?.contact === "hello@palawancollective.com" ? "agent@merqato.digital" : footerContent?.contact ?? FOOTER_DEFAULT.contact}
       />
     </div>
   );

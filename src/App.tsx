@@ -672,6 +672,9 @@ function Postcard() {
   const [note, setNote] = useState("");
   const [who, setWho] = useState({ name: "", business: "", email: "", site: "" });
   const [tried, setTried] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState("");
+  const [trap, setTrap] = useState("");
 
   const toggle = (h: string) => {
     setPicks((p) => (h === "Not sure yet" ? (p.includes(h) ? [] : [h]) : p.includes(h) ? p.filter((x) => x !== h) : [...p.filter((x) => x !== "Not sure yet"), h]));
@@ -688,6 +691,34 @@ function Postcard() {
     if (step === 2) return;
     setTried(false);
     setStep((s) => Math.min(2, s + 1));
+  };
+  const sendPostcard = async () => {
+    if (sending || !canReview || !canSend) return;
+    setSendError("");
+    setSending(true);
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: who.name.trim(),
+          business: who.business.trim(),
+          email: who.email.trim(),
+          website: who.site.trim(),
+          handoffs: picks,
+          weeklyLoad: load,
+          note: note.trim(),
+          trap,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) throw new Error(data.error || "Could not deliver your message.");
+      setSent(true);
+    } catch (err) {
+      setSendError(err instanceof Error ? err.message : "Unable to send. Please email agent@merqato.digital.");
+    } finally {
+      setSending(false);
+    }
   };
   const back = () => {
     setTried(false);
@@ -715,7 +746,7 @@ function Postcard() {
             <div className="text-center px-6 py-16 md:py-20 step-in">
               <Turtle className="w-32 mx-auto" />
               <p className="font-serif font-light text-4xl md:text-5xl mt-6">It's on its way.</p>
-              <p className="font-hand text-2xl text-lagoon mt-3">We'll write back within one working day.</p>
+              <p className="font-hand text-2xl text-lagoon mt-3">Your message has been received. We'll be in touch soon.</p>
               <div className="mt-8 flex flex-wrap justify-center gap-x-8 gap-y-3 text-xs text-ink/55">
                 <span>01 · we read it properly</span>
                 <span>02 · a short, human reply</span>
@@ -913,6 +944,10 @@ function Postcard() {
                   </div>
                 )}
 
+                <div className="absolute left-[-9999px] top-auto w-px h-px overflow-hidden" aria-hidden="true">
+                  <label htmlFor="postcard-company-url">Leave this field empty</label>
+                  <input id="postcard-company-url" tabIndex={-1} autoComplete="off" value={trap} onChange={e => setTrap(e.target.value)}/>
+                </div>
                 {/* controls */}
                 <div className="mt-auto pt-6 flex flex-wrap items-center gap-x-4 gap-y-3">
                   {step > 0 && (
@@ -932,15 +967,20 @@ function Postcard() {
                   ) : (
                     <button
                       type="button"
-                      disabled={!canSend}
-                      onClick={() => setSent(true)}
+                      disabled={!canSend || !canReview || sending}
+                      onClick={sendPostcard}
                       className="group inline-flex items-center gap-3 bg-ink text-sand rounded-full pl-6 pr-1.5 py-1.5 hover:bg-coral hover:text-ink transition disabled:opacity-40 disabled:hover:bg-ink disabled:hover:text-sand"
                     >
-                      <span className="text-base">Send the postcard</span>
+                      <span className="text-base">{sending ? "Sending…" : "Send the postcard"}</span>
                       <span className="w-9 h-9 rounded-full bg-coral text-ink grid place-items-center">→</span>
                     </button>
                   )}
                   <span className="font-hand text-base sm:text-lg text-ink/40">no commitment, ever</span>
+                  {sendError && (
+                    <p role="alert" className="w-full text-sm text-[#a7422c]">
+                      {sendError} <a className="underline font-semibold" href="mailto:agent@merqato.digital">Email us directly</a>.
+                    </p>
+                  )}
                 </div>
               </div>
             </>

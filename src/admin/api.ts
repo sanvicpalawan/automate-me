@@ -38,6 +38,8 @@ export const api = {
   sectionDelete: (key: string) => request("DELETE", `/api/admin/sections?key=${encodeURIComponent(key)}`),
   media: () => request("GET", "/api/admin/media"),
   mediaUpload: (payload: any) => request("POST", "/api/admin/media", payload),
+  mediaTicket: (payload: any) => request("POST", "/api/admin/media", { action: "ticket", ...payload }),
+  mediaRegister: (payload: any) => request("POST", "/api/admin/media", { action: "register", ...payload }),
   mediaDelete: (id: number) => request("DELETE", `/api/admin/media?id=${id}`),
   leads: () => request("GET", "/api/admin/leads"),
   leadStatus: (id: number, status: string) => request("PATCH", "/api/admin/leads", {id,status}),

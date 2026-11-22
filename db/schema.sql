@@ -67,6 +67,14 @@ CREATE TABLE IF NOT EXISTS uploaded_media (
  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Large photos and videos live in Cloudflare R2; the database only keeps the
+-- details so the media library can list and reuse them.
+ALTER TABLE uploaded_media ADD COLUMN IF NOT EXISTS storage TEXT NOT NULL DEFAULT 'db';
+ALTER TABLE uploaded_media ADD COLUMN IF NOT EXISTS object_key TEXT;
+ALTER TABLE uploaded_media ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'image';
+ALTER TABLE uploaded_media ADD COLUMN IF NOT EXISTS size_bytes BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE uploaded_media ALTER COLUMN bytes DROP NOT NULL;
+
 -- Durable inbox for postcard inquiries. This is idempotent.
 CREATE TABLE IF NOT EXISTS website_leads (
   id BIGSERIAL PRIMARY KEY,

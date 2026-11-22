@@ -1056,21 +1056,81 @@ function Footer({
   );
 }
 
-/* CMS-controlled section layouts: content, cards, and portfolio. */
+/* CMS-controlled section layouts: content, cards, portfolio, links. */
+type ProjectMedia = { url: string; kind?: string; poster?: string };
+type ProjectItem = { title?: string; description?: string; image?: string; href?: string; media?: ProjectMedia[] };
+type LinkItem = { label?: string; href?: string; note?: string };
+
+function ProjectGallery({ item }: { item: ProjectItem }) {
+  const media: ProjectMedia[] = Array.isArray(item.media) ? item.media : [];
+  const [open, setOpen] = useState<number | null>(null);
+  const files = media.length ? media : item.image ? [{ url: item.image, kind: "image" }] : [];
+  if (!files.length) return null;
+  const active = open === null ? null : files[open];
+  return <>
+    <div className="mt-4 grid grid-cols-3 gap-2">
+      {files.slice(0, 3).map((m, i) => <button
+        key={i}
+        type="button"
+        onClick={() => setOpen(i)}
+        className="relative overflow-hidden rounded-xl border border-ink/15 bg-shell/40"
+      >
+        {m.kind === "video"
+          ? <span className="grid aspect-[4/3] w-full place-items-center bg-[#0f5257] text-2xl text-sand">▶</span>
+          : <img src={m.url} alt={item.title || "Project photo"} loading="lazy" className="aspect-[4/3] w-full object-cover" />}
+        {i === 2 && files.length > 3 && <span className="absolute inset-0 grid place-items-center bg-ink/60 text-sm font-semibold text-sand">+{files.length - 3}</span>}
+      </button>)}
+    </div>
+    {active && <div
+      className="fixed inset-0 z-50 grid place-items-center bg-ink/90 p-4"
+      role="dialog"
+      aria-modal="true"
+      onClick={() => setOpen(null)}
+    >
+      <button className="absolute right-4 top-4 rounded-full bg-sand/90 px-4 py-2 text-sm font-semibold text-ink" onClick={() => setOpen(null)}>Close</button>
+      <div className="max-h-[90vh] w-full max-w-4xl overflow-auto" onClick={e => e.stopPropagation()}>
+        {active.kind === "video"
+          ? <video src={active.url} controls autoPlay playsInline className="w-full rounded-2xl bg-black" />
+          : <img src={active.url} alt={item.title || "Project photo"} className="w-full rounded-2xl" />}
+        {files.length > 1 && <div className="mt-4 flex flex-wrap justify-center gap-2">
+          {files.map((m, i) => <button
+            key={i}
+            onClick={() => setOpen(i)}
+            className={`overflow-hidden rounded-lg border-2 ${i === open ? "border-coral" : "border-transparent"}`}
+          >
+            {m.kind === "video"
+              ? <span className="grid h-14 w-20 place-items-center bg-[#0f5257] text-sand">▶</span>
+              : <img src={m.url} alt="" className="h-14 w-20 object-cover" />}
+          </button>)}
+        </div>}
+      </div>
+    </div>}
+  </>;
+}
+
 function ManagedSection({ section }: { section: Section }) {
   const content = section.content || {};
-  const items = Array.isArray(content.items) ? content.items as {title?:string;description?:string;image?:string;href?:string}[] : [];
+  const items: ProjectItem[] = Array.isArray(content.items) ? content.items as ProjectItem[] : [];
+  const links: LinkItem[] = Array.isArray(content.links) ? content.links as LinkItem[] : [];
   const layout = content.kind || "content";
   const image = typeof content.image === "string" ? content.image : "";
   return <section id={section.key} className="py-20 md:py-28">
     <div className="mx-auto max-w-6xl px-5 md:px-8">
-      <SectionHead label={section.subtitle || (layout === "portfolio" ? "Selected projects" : "What we do")} title={section.title || "Explore"} intro={section.body || undefined}/>
+      <SectionHead label={section.subtitle || (layout === "portfolio" ? "Selected projects" : layout === "links" ? "Quick access" : "What we do")} title={section.title || "Explore"} intro={section.body || undefined}/>
       {layout === "content" && image && <img src={image} alt={section.title || ""} loading="lazy" className="mt-10 w-full rounded-2xl max-h-[540px] object-cover"/>}
+      {layout === "links" && links.length > 0 && <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {links.map((l, i) => <a key={i} href={l.href || "#"} target="_blank" rel="noopener noreferrer" className="group flex flex-col justify-between rounded-2xl border border-ink/15 bg-shell/40 p-6 transition hover:border-lagoon hover:bg-shell/70">
+          <span className="font-serif text-2xl">{l.label || "Untitled link"}</span>
+          {l.note && <span className="mt-2 text-sm text-ink/60">{l.note}</span>}
+          <span className="mt-6 inline-block border-b border-lagoon pb-1 text-sm font-medium text-lagoon group-hover:text-ink">Open ↗</span>
+        </a>)}
+      </div>}
       {(layout === "cards" || layout === "portfolio") && <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((item, i) => <article key={i} className="overflow-hidden rounded-2xl border border-ink/15 bg-shell/40">
+        {items.map((item, i) => <article key={i} className="overflow-hidden rounded-2xl border border-ink/15 bg-shell/40 flex flex-col">
           {item.image && <img src={item.image} alt={item.title || "Project image"} loading="lazy" className="aspect-[4/3] w-full object-cover"/>}
-          <div className="p-5 sm:p-6"><h3 className="font-serif text-2xl">{item.title || "Untitled"}</h3>
+          <div className="p-5 sm:p-6 flex flex-col flex-1"><h3 className="font-serif text-2xl">{item.title || "Untitled"}</h3>
             {item.description && <p className="mt-3 text-ink/65 text-sm leading-relaxed">{item.description}</p>}
+            <ProjectGallery item={item}/>
             {item.href && <a href={item.href} target="_blank" rel="noopener noreferrer" className="mt-5 inline-block border-b border-lagoon pb-1 text-sm font-medium text-lagoon hover:text-ink">View project ↗</a>}
           </div>
         </article>)}

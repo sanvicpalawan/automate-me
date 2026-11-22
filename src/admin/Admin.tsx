@@ -6,7 +6,10 @@ import type { FaqItem, Section, Theme } from "../content";
 
 type View = "Inbox" | "Pages" | "Brand" | "Media" | "FAQ";
 type Editable = Section & { content: Record<string, any> };
-type Media = { id: number; filename: string; alt: string; size: number; url: string };
+type Media = { id: number; filename: string; alt: string; size: number; url: string; kind?: string };
+type ProjectMedia = { url: string; kind: "image" | "video"; poster?: string };
+type ProjectItem = { title: string; description: string; image: string; href: string; media: ProjectMedia[] };
+type LinkItem = { label: string; href: string; note: string };
 const essentials = ["header", "hero", "footer"];
 const input = "w-full rounded-xl border border-[#d9ded8] bg-white px-3.5 py-3 text-sm text-[#193b37] outline-none focus:border-[#155b58] focus:ring-2 focus:ring-[#155b58]/10";
 const btn = "rounded-xl bg-[#144c49] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0d3835] disabled:opacity-40 transition";
@@ -32,43 +35,99 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
     </form>
   </div>;
 }
-function MediaPanel({ onPick }: { onPick?: (url: string) => void }) {
+const IMAGE_TYPES = ["image/png","image/jpeg","image/webp","image/gif","image/avif"];
+const VIDEO_TYPES = ["video/mp4","video/quicktime","video/webm","video/x-m4v"];
+// R2 requires every chunk except the last to be at least 5 MB.
+const PART_SIZE = 8 * 1024 * 1024;
+
+function formatSize(bytes:number){
+  if(!bytes) return "";
+  if(bytes < 1024*1024) return Math.max(1,Math.round(bytes/1024))+" KB";
+  return (bytes/1024/1024).toFixed(1)+" MB";
+}
+
+/** Uploads a file straight to media storage, in chunks, so phone videos work. */
+async function uploadFile(file:File, onProgress:(pct:number)=>void){
+  const mime = file.type;
+  if(!IMAGE_TYPES.includes(mime) && !VIDEO_TYPES.includes(mime))
+    throw new Error("Choose an image (PNG, JPG, WEBP, GIF) or a video (MP4, MOV, WEBM).");
+  const ticket = await api.mediaTicket({filename:file.name,mime,size:file.size});
+  if(!ticket.ok) throw new Error(ticket.error||"Upload could not start.");
+  const {tickets,key} = ticket.json as any;
+  const start = await fetch(tickets.startUrl,{method:"POST"});
+  if(!start.ok) throw new Error("Upload could not start.");
+  const {uploadId} = await start.json();
+  const parts:{partNumber:number;etag:string}[] = [];
+  let partNumber = 1;
+  for(let offset=0; offset<file.size || partNumber===1; offset+=PART_SIZE){
+    const blob = file.slice(offset, Math.min(offset+PART_SIZE, file.size));
+    const url = `${tickets.partUrl}&uploadId=${encodeURIComponent(uploadId)}&partNumber=${partNumber}`;
+    const res = await fetch(url,{method:"PUT",body:blob});
+    if(!res.ok) throw new Error("Upload failed. Please try again.");
+    const data = await res.json();
+    parts.push({partNumber,etag:data.etag});
+    onProgress(Math.min(99,Math.round(((offset+blob.size)/Math.max(file.size,1))*100)));
+    if(offset+PART_SIZE>=file.size) break;
+    partNumber++;
+  }
+  const done = await fetch(`${tickets.completeUrl}&uploadId=${encodeURIComponent(uploadId)}`,{
+    method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({parts})});
+  if(!done.ok) throw new Error("Upload could not be finished.");
+  const saved = await api.mediaRegister({
+    key, filename:file.name, mime,
+    alt:file.name.replace(/\.[^.]+$/,"").replace(/[-_]/g," "),
+    size:file.size,
+  });
+  if(!saved.ok) throw new Error(saved.error||"Upload failed.");
+  onProgress(100);
+  return saved.json as any;
+}
+
+function MediaPanel({ onPick, pickMode }: { onPick?: (m:Media)=>void; pickMode?: boolean }) {
   const [items,setItems]=useState<Media[]>([]);
   const [busy,setBusy]=useState(false);
+  const [progress,setProgress]=useState(0);
   const [message,setMessage]=useState("");
   const load=async()=>{const x=await api.media();if(x.ok)setItems(x.json?.media||[]);else setMessage(x.error||"Media library unavailable");};
   useEffect(()=>{void load();},[]);
-  async function upload(file:File) {
-    if(!["image/png","image/jpeg","image/webp","image/gif"].includes(file.type)){setMessage("Choose PNG, JPG, WEBP or GIF.");return;}
-    if(file.size>2*1024*1024){setMessage("Resize images to under 2 MB.");return;}
+  async function upload(files:FileList|null){
+    if(!files||!files.length) return;
     setBusy(true);setMessage("");
-    const reader=new FileReader();
-    reader.onerror=()=>{setBusy(false);setMessage("Unable to read image");};
-    reader.onload=async()=>{
-      const result=await api.mediaUpload({filename:file.name,mime:file.type,data:reader.result,alt:file.name.replace(/\.[^.]+$/,"").replace(/[-_]/g," ")});
-      setBusy(false);setMessage(result.ok?"Image uploaded":result.error||"Upload failed");
-      if(result.ok){await load();if(onPick)onPick(result.json.url);}
-    };
-    reader.readAsDataURL(file);
+    try{
+      for(const file of Array.from(files)){
+        setProgress(0);
+        const saved = await uploadFile(file,p=>setProgress(p));
+        setMessage(`${file.name} uploaded`);
+        if(onPick&&pickMode) onPick({id:saved.id,filename:file.name,alt:file.name,size:file.size,url:saved.url,kind:saved.kind});
+      }
+      await load();
+    }catch(err:any){
+      setMessage(err?.message||"Upload failed");
+    }finally{
+      setBusy(false);setProgress(0);
+    }
   }
   return <div className="space-y-5">
     <div className={card+" p-5 sm:p-7"}>
-      <h2 className="font-serif text-2xl text-[#1d3e39]">Media library</h2><p className="mt-2 text-sm text-[#657770]">Upload images from your device. Files are saved to your site database and can be reused in any section.</p>
+      <h2 className="font-serif text-2xl text-[#1d3e39]">Media library</h2><p className="mt-2 text-sm text-[#657770]">Upload photos and videos from your phone or computer. Files are stored safely and can be reused in any section.</p>
       <label className="mt-5 flex cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-[#a7c0b5] bg-[#f5f9f6] px-5 py-8 text-center text-sm font-semibold text-[#245e53] hover:bg-[#ebf4ee]">
-        {busy?"Uploading…":"＋ Choose an image from your device"}
-        <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="sr-only" disabled={busy} onChange={e=>{const f=e.target.files?.[0];if(f)void upload(f);e.target.value="";}} />
+        {busy?`Uploading… ${progress}%`:"＋ Choose photos or videos from your device"}
+        <input type="file" multiple accept={[...IMAGE_TYPES,...VIDEO_TYPES].join(",")} className="sr-only" disabled={busy} onChange={e=>{const f=e.target.files;if(f&&f.length)void upload(f);e.target.value="";}} />
       </label>
-      <p className="mt-2 text-xs text-[#71867e]">PNG, JPG, WEBP, GIF · Maximum 2 MB each</p>
+      {busy && <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[#e6ece5]"><div className="h-full bg-[#155b58] transition-all" style={{width:progress+"%"}}/></div>}
+      <p className="mt-2 text-xs text-[#71867e]">Photos: PNG, JPG, WEBP, GIF · Videos: MP4, MOV, WEBM · Up to 25 MB per photo, 500 MB per video</p>
       {message && <p role="status" className="mt-3 text-sm text-[#275b52]">{message}</p>}
     </div>
     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
       {items.map(m=><div key={m.id} className={card+" overflow-hidden"}>
-        <img src={m.url} alt={m.alt||m.filename} loading="lazy" className="aspect-[4/3] w-full object-cover bg-[#e9f0ea]"/>
-        <div className="p-3"><p className="truncate text-xs font-medium text-[#244640]" title={m.filename}>{m.filename}</p><p className="mt-1 text-[11px] text-[#789086]">{Math.ceil(m.size/1024)} KB</p>
+        {m.kind==="video"
+          ? <div className="aspect-[4/3] w-full bg-[#1d3e39] grid place-items-center text-white text-2xl">▶<span className="sr-only">Video</span></div>
+          : <img src={m.url} alt={m.alt||m.filename} loading="lazy" className="aspect-[4/3] w-full object-cover bg-[#e9f0ea]"/>}
+        <div className="p-3"><p className="truncate text-xs font-medium text-[#244640]" title={m.filename}>{m.filename}</p><p className="mt-1 text-[11px] text-[#789086]">{m.kind==="video"?"Video":"Photo"} · {formatSize(m.size)}</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            {onPick && <button className={btn+" !px-3 !py-2 !text-xs"} onClick={()=>onPick(m.url)}>Use image</button>}
-            <button className={outline+" !px-3 !py-2 !text-xs"} onClick={()=>{void navigator.clipboard?.writeText(location.origin+m.url);setMessage("Image URL copied");}}>Copy URL</button>
-            <button className="text-xs text-[#a34135] underline" onClick={async()=>{if(!confirm("Delete this image? Existing sections using it will show a broken image."))return;const x=await api.mediaDelete(m.id);setMessage(x.ok?"Image deleted":x.error||"Delete failed");if(x.ok)void load();}}>Delete</button>
+            {onPick && <button className={btn+" !px-3 !py-2 !text-xs"} onClick={()=>onPick(m)}>{pickMode?"Use this":"Use"}</button>}
+            <button className={outline+" !px-3 !py-2 !text-xs"} onClick={()=>{void navigator.clipboard?.writeText(/^https?:/.test(m.url)?m.url:location.origin+m.url);setMessage("File URL copied");}}>Copy URL</button>
+            <button className="text-xs text-[#a34135] underline" onClick={async()=>{if(!confirm("Delete this file? Sections using it will show a broken file."))return;const x=await api.mediaDelete(m.id);setMessage(x.ok?"File deleted":x.error||"Delete failed");if(x.ok)void load();}}>Delete</button>
           </div>
         </div>
       </div>)}
@@ -125,8 +184,14 @@ function PagePanel(){
   async function remove(){if(!active||essentials.includes(active.key)||!confirm("Delete this section from your live site?"))return;setBusy(true);const x=await api.sectionDelete(active.key);setBusy(false);setMsg(x.ok?"Section deleted":x.error||"Delete failed");if(x.ok){setSelected("hero");void refresh();}}
   async function create(){const key="custom_"+Date.now().toString(36);const newSection:Editable={key,title:label.trim()||"New section",subtitle:"",body:"",sortOrder:sections.length+10,content:{kind:type,items:[],image:"",hidden:false}};
     setBusy(true);const x=await api.section(newSection);setBusy(false);setMsg(x.ok?"Section added. Choose its content and save.":x.error||"Could not add");if(x.ok){setAdding(false);setLabel("");setSelected(key);void refresh();}}
-  function updateList(next:{title:string;description:string;image:string;href:string}[]){content({items:next});}
-  const entries=Array.isArray(active?.content?.items)?active.content.items as {title:string;description:string;image:string;href:string}[]:[];
+  function updateList(next:ProjectItem[]){content({items:next});}
+  const entries:ProjectItem[]=Array.isArray(active?.content?.items)
+    ? (active.content.items as any[]).map(i=>({title:i?.title||"",description:i?.description||"",image:i?.image||"",href:i?.href||"",media:Array.isArray(i?.media)?i.media:[]}))
+    : [];
+  function updateLinks(next:LinkItem[]){content({links:next});}
+  const links:LinkItem[]=Array.isArray(active?.content?.links)
+    ? (active.content.links as any[]).map(l=>({label:l?.label||"",href:l?.href||"",note:l?.note||""}))
+    : [];
   return <div className="grid lg:grid-cols-[250px_minmax(0,1fr)] gap-5">
     <aside className={card+" p-4 h-fit"}>
       <div className="flex items-center justify-between px-2 mb-3"><h2 className="text-sm font-bold text-[#234c43]">Website sections</h2><span className="text-xs text-[#789087]">{sections.length}</span></div>
@@ -168,19 +233,33 @@ function PagePanel(){
           <Text label="Section title" value={active.title||""} onChange={v=>patch({title:v})}/>
           <Text label="Subtitle" value={active.subtitle||""} onChange={v=>patch({subtitle:v})}/>
           <Text label="Description" multiline value={active.body||""} onChange={v=>patch({body:v})}/>
-          <Field label="Layout"><select className={input} value={active.content.kind||"content"} onChange={e=>content({kind:e.target.value})}><option value="content">Text & image</option><option value="portfolio">Portfolio grid</option><option value="cards">Cards grid</option></select></Field>
+          <Field label="Layout"><select className={input} value={active.content.kind||"content"} onChange={e=>content({kind:e.target.value})}><option value="content">Text & image</option><option value="portfolio">Portfolio grid</option><option value="cards">Cards grid</option><option value="links">Fast links</option></select></Field>
           <InteractiveEditor section={active} onChange={content}/>
           <div className="flex items-center justify-between"><span className="text-xs font-semibold text-[#526963]">Section image</span><button className={outline+" !px-3 !py-2 !text-xs"} onClick={()=>setImagePick(v=>!v)}>{imagePick?"Close library":"Choose upload"}</button></div>
-          <Text label="Image URL" hint="Upload images in the Media tab or choose an existing image here." value={active.content.image||""} onChange={v=>content({image:v})}/>
+          <Text label="Image URL" hint="Upload photos in the Media tab or choose an existing one here." value={active.content.image||""} onChange={v=>content({image:v})}/>
           {active.content.image && <img src={active.content.image} alt="" className="max-h-56 rounded-xl object-cover" />}
-          {imagePick && <MediaPanel onPick={url=>{content({image:url});setImagePick(false);}}/>}
-          {(active.content.kind==="portfolio"||active.content.kind==="cards") && <div className="space-y-3 border-t pt-5 border-[#e6ece5]">
-            <div className="flex justify-between items-center"><h3 className="text-sm font-bold">Portfolio / Cards</h3><button className={outline} onClick={()=>updateList([...entries,{title:"New project",description:"",image:"",href:""}])}>＋ Add item</button></div>
-            {entries.map((item,i)=><div key={i} className="rounded-xl bg-[#f7f9f6] border border-[#e3eae3] p-4 space-y-3">
-              <div className="flex items-center justify-between"><span className="text-xs font-bold">Item {i+1}</span><button className="text-xs text-red-700 underline" onClick={()=>updateList(entries.filter((_,j)=>j!==i))}>Remove</button></div>
-              {(["title","description","image","href"] as const).map(k=><Text key={k} label={k==="href"?"Project URL":k==="image"?"Image URL":k==="description"?"Description":"Project name"} value={item[k]||""} multiline={k==="description"} onChange={v=>updateList(entries.map((x,j)=>j===i?{...x,[k]:v}:x))}/>)}
-              <div className="flex gap-2"><button className={outline+" !text-xs"} disabled={i===0} onClick={()=>{const a=[...entries];[a[i],a[i-1]]=[a[i-1],a[i]];updateList(a);}}>Move up</button><button className={outline+" !text-xs"} disabled={i===entries.length-1} onClick={()=>{const a=[...entries];[a[i],a[i+1]]=[a[i+1],a[i]];updateList(a);}}>Move down</button></div>
+          {imagePick && <MediaPanel pickMode onPick={m=>{content({image:m.url});setImagePick(false);}}/>}
+          {active.content.kind==="links" && <div className="space-y-3 border-t pt-5 border-[#e6ece5]">
+            <div className="flex justify-between items-center"><h3 className="text-sm font-bold">Fast links</h3><button className={outline} onClick={()=>updateLinks([...links,{label:"New link",href:"",note:""}])}>＋ Add link</button></div>
+            <p className="text-xs text-[#789087]">Quick links to your apps, sites and tools. They show up as tiles on the website.</p>
+            {links.map((item,i)=><div key={i} className="rounded-xl bg-[#f7f9f6] border border-[#e3eae3] p-4 space-y-3">
+              <div className="flex items-center justify-between"><span className="text-xs font-bold">Link {i+1}</span><button className="text-xs text-red-700 underline" onClick={()=>updateLinks(links.filter((_,j)=>j!==i))}>Remove</button></div>
+              <Text label="Name" value={item.label} onChange={v=>updateLinks(links.map((x,j)=>j===i?{...x,label:v}:x))}/>
+              <Text label="URL" value={item.href} onChange={v=>updateLinks(links.map((x,j)=>j===i?{...x,href:v}:x))}/>
+              <Text label="Short note (optional)" value={item.note} onChange={v=>updateLinks(links.map((x,j)=>j===i?{...x,note:v}:x))}/>
             </div>)}
+          </div>}
+          {(active.content.kind==="portfolio"||active.content.kind==="cards") && <div className="space-y-3 border-t pt-5 border-[#e6ece5]">
+            <div className="flex justify-between items-center"><h3 className="text-sm font-bold">Portfolio / Cards</h3><button className={outline} onClick={()=>updateList([...entries,{title:"New project",description:"",image:"",href:"",media:[]}])}>＋ Add item</button></div>
+            {entries.map((item,i)=><ProjectItemEditor
+              key={i}
+              item={item}
+              index={i}
+              total={entries.length}
+              onChange={next=>updateList(entries.map((x,j)=>j===i?next:x))}
+              onRemove={()=>updateList(entries.filter((_,j)=>j!==i))}
+              onMove={dir=>{const a=[...entries];const to=i+dir;if(to<0||to>=a.length)return;[a[i],a[to]]=[a[to],a[i]];updateList(a);}}
+            />)}
           </div>}
           <Field label="Display order"><input type="number" className={input} value={active.sortOrder||0} onChange={e=>patch({sortOrder:Number(e.target.value)})}/></Field>
           {!essentials.includes(active.key) && <label className="flex items-center gap-3 text-sm text-[#49645c]"><input type="checkbox" checked={!active.content.hidden} onChange={e=>content({hidden:!e.target.checked})} /> Show this section on the website</label>}
@@ -195,6 +274,43 @@ function PagePanel(){
     </div>
   </div>;
 }
+function ProjectItemEditor({item,index,total,onChange,onRemove,onMove}:{
+  item:ProjectItem; index:number; total:number;
+  onChange:(next:ProjectItem)=>void; onRemove:()=>void; onMove:(dir:number)=>void;
+}){
+  const [picking,setPicking]=useState(false);
+  const media:ProjectMedia[]=Array.isArray(item.media)?item.media:[];
+  const addMedia=(m:Media)=>{
+    if(!m.url) return;
+    if(media.some(x=>x.url===m.url)) return;
+    onChange({...item,media:[...media,{url:m.url,kind:m.kind==="video"?"video":"image"}]});
+    setPicking(false);
+  };
+  return <div className="rounded-xl bg-[#f7f9f6] border border-[#e3eae3] p-4 space-y-3">
+    <div className="flex items-center justify-between"><span className="text-xs font-bold">Project {index+1}</span><button className="text-xs text-red-700 underline" onClick={onRemove}>Remove</button></div>
+    <Text label="Project name" value={item.title} onChange={v=>onChange({...item,title:v})}/>
+    <Text label="Description" multiline value={item.description} onChange={v=>onChange({...item,description:v})}/>
+    <Text label="Project URL" value={item.href} onChange={v=>onChange({...item,href:v})}/>
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold text-[#526963]">Photos & videos ({media.length})</span>
+        <button className={outline+" !px-3 !py-2 !text-xs"} onClick={()=>setPicking(v=>!v)}>{picking?"Close picker":"＋ Add from device"}</button>
+      </div>
+      {media.length>0 && <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+        {media.map((m,mi)=><div key={mi} className="relative group overflow-hidden rounded-lg border border-[#e3eae3] bg-white">
+          {m.kind==="video"
+            ? <div className="aspect-[4/3] bg-[#1d3e39] grid place-items-center text-white text-xl">▶</div>
+            : <img src={m.url} alt="" className="aspect-[4/3] w-full object-cover" />}
+          <button type="button" aria-label="Remove file" className="absolute top-1 right-1 rounded-full bg-black/60 px-2 py-0.5 text-[11px] text-white" onClick={()=>onChange({...item,media:media.filter((_,j)=>j!==mi)})}>Remove</button>
+        </div>)}
+      </div>}
+      <p className="text-xs text-[#789087]">Add several photos and videos per project. The first one becomes the cover.</p>
+      {picking && <MediaPanel pickMode onPick={addMedia}/>}
+    </div>
+    <div className="flex gap-2"><button className={outline+" !text-xs"} disabled={index===0} onClick={()=>onMove(-1)}>Move up</button><button className={outline+" !text-xs"} disabled={index===total-1} onClick={()=>onMove(1)}>Move down</button></div>
+  </div>;
+}
+
 function FaqPanel(){
   const [items,setItems]=useState<FaqItem[]>([]);
   const [draft,setDraft]=useState({question:"",answer:""});
